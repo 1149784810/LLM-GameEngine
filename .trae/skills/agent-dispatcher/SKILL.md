@@ -628,3 +628,268 @@ agent-dispatcher:
 ║ 改进建议: （如适用）                                           ║
 ╚═══════════════════════════════════════════════════════════════╝
 ```
+
+---
+
+## 智能体负载均衡算法 ⭐新增
+
+### 概述
+
+当同一智能体类型需要处理多个角色任务时，通过**智能调度算法**优化任务分配顺序，最大化并行效率，最小化等待时间。
+
+### 负载均衡目标
+
+1. **最小化总完成时间**（Makespan）
+2. **均衡各智能体负载**
+3. **优先处理关键路径任务**
+4. **减少任务切换开销**
+
+### 任务调度优先级算法
+
+```typescript
+TASK_SCHEDULING_ALGORITHM ::= {
+  // 优先级计算因子
+  priority_factors: {
+    dependency_priority: 0.4,    // 依赖优先级权重（被依赖的任务优先）
+    risk_priority: 0.3,          // 风险优先级权重（高风险任务优先）
+    duration_priority: 0.2,      // 时长优先级权重（耗时长的优先）
+    resource_priority: 0.1       // 资源优先级权重（资源需求高的优先）
+  },
+  
+  // 优先级计算公式
+  calculate_priority: (task) => {
+    return (
+      task.dependency_score * 0.4 +
+      task.risk_score * 0.3 +
+      task.duration_score * 0.2 +
+      task.resource_score * 0.1
+    )
+  }
+}
+```
+
+### 调度策略
+
+#### 策略1：依赖优先调度（默认）
+
+```
+原则：被依赖的任务优先执行，避免阻塞后续任务
+
+示例：
+SD-1（核心玩法） ─┐
+                 ├→ SD-3（道具系统）
+SD-2（商店系统） ─┘
+
+调度顺序：
+1. SD-1（核心玩法）- 优先级10（被SD-3依赖）
+2. SD-2（商店系统）- 优先级10（被SD-3依赖）
+3. SD-3（道具系统）- 优先级5（依赖SD-1和SD-2）
+```
+
+#### 策略2：风险优先调度
+
+```
+原则：高风险任务优先，早期发现问题
+
+风险评分标准：
+- 历史失败率 >30%：+5分
+- 涉及新技术：+3分
+- 跨系统集成：+2分
+- 核心功能：+1分
+
+调度顺序：
+1. 高风险任务（风险分>5）
+2. 中风险任务（风险分3-5）
+3. 低风险任务（风险分<3）
+```
+
+#### 策略3：最短任务优先（SJF）
+
+```
+原则：短任务优先完成，快速释放资源
+
+适用场景：
+- 任务之间无依赖关系
+- 需要快速看到部分成果
+- 资源紧张时
+
+调度顺序：
+按预计完成时间升序排列
+```
+
+#### 策略4：智能混合调度（推荐）
+
+```
+原则：综合考虑依赖、风险、时长和资源
+
+算法流程：
+1. 构建任务依赖图
+2. 计算每个任务的优先级分数
+3. 按优先级分数降序排序
+4. 分配到可用智能体（考虑智能体当前负载）
+5. 动态调整（任务完成后重新计算）
+
+示例：
+任务列表：
+- SD-1: 核心玩法（被依赖×2，风险中，时长长）→ 优先级 8.5
+- SD-2: 商店系统（被依赖×1，风险低，时长中）→ 优先级 6.2
+- SD-3: 道具系统（依赖×2，风险高，时长中）→ 优先级 5.8
+- UID-1: 主界面（无依赖，风险低，时长短）→ 优先级 3.0
+
+调度结果：
+1. SD-1（优先级8.5）→ game-systems-designer
+2. SD-2（优先级6.2）→ game-systems-designer（SD-1完成后）
+3. SD-3（优先级5.8）→ game-systems-designer（SD-2完成后）
+4. UID-1（优先级3.0）→ frontend-visual-crafter（并行执行）
+```
+
+### 智能体负载均衡算法
+
+```typescript
+FUNCTION: balance_agent_load(
+  tasks: [TASK],
+  available_agents: [AGENT_TYPE],
+  strategy: "DEPENDENCY" | "RISK" | "SJF" | "HYBRID"
+) → SCHEDULE_PLAN
+
+输入:
+  - tasks: 任务列表
+  - available_agents: 可用智能体类型列表
+  - strategy: 调度策略
+
+输出:
+  - SCHEDULE_PLAN: 调度计划
+
+算法步骤:
+  1. 按策略计算任务优先级
+  2. 初始化智能体负载表（负载=0）
+  3. 按优先级遍历任务：
+     a. 找出能处理该任务的智能体类型
+     b. 选择当前负载最低的智能体
+     c. 分配任务，更新负载
+  4. 生成调度计划
+
+SCHEDULE_PLAN ::= {
+  schedule: [{
+    task_id: TASK_ID,
+    agent_type: AGENT_TYPE,
+    estimated_start: TIMESTAMP,
+    estimated_end: TIMESTAMP,
+    dependencies: [TASK_ID]
+  }],
+  agent_loads: {
+    [agent_type]: {
+      assigned_tasks: INT,
+      total_estimated_duration: INT,  // 分钟
+      utilization_rate: FLOAT         // 利用率
+    }
+  },
+  makespan: INT,  // 总完成时间（分钟）
+  parallel_efficiency: FLOAT  // 并行效率（0-1）
+}
+```
+
+### 负载均衡示例
+
+```
+场景：5个任务，2个智能体类型
+
+任务：
+- SD-1: 核心玩法（game-systems-designer，60分钟）
+- SD-2: 商店系统（game-systems-designer，45分钟）
+- SD-3: 道具系统（game-systems-designer，30分钟）
+- UID-1: 主界面（frontend-visual-crafter，40分钟）
+- UID-2: 商店界面（frontend-visual-crafter，35分钟）
+
+策略：HYBRID（依赖优先）
+
+调度计划：
+时间轴 ──────────────────────────────────────────→
+
+frontend-visual-crafter:
+├─ UID-1 (40分钟) ─┤
+                    └─ UID-2 (35分钟) ─┤
+                                        └─ 空闲
+
+game-systems-designer:
+├─ SD-1 (60分钟) ────────────────────────┤
+                                          └─ SD-2 (45分钟) ─┤
+                                                            └─ SD-3 (30分钟) ─┤
+
+调度结果：
+- 总完成时间（Makespan）: 135分钟
+- frontend-visual-crafter 利用率: 75/135 = 55.6%
+- game-systems-designer 利用率: 135/135 = 100%
+- 并行效率: 0.78（良好）
+
+优化建议：
+- 如果能让 frontend-visual-crafter 处理更多任务，可进一步提高并行效率
+```
+
+### 动态调整机制
+
+```typescript
+// 任务完成后的动态调整
+FUNCTION: adjust_schedule_on_completion(
+  completed_task: TASK,
+  remaining_tasks: [TASK],
+  current_schedule: SCHEDULE_PLAN
+) → UPDATED_SCHEDULE
+
+调整策略：
+1. 标记已完成任务
+2. 解锁依赖该任务的其他任务
+3. 重新计算剩余任务的优先级
+4. 重新分配智能体（考虑当前负载）
+5. 生成更新后的调度计划
+
+示例：
+初始计划：SD-1 → SD-2 → SD-3
+SD-1 提前完成（预计60分钟，实际45分钟）
+调整结果：
+- 立即启动 SD-2
+- SD-3 预计提前15分钟开始
+- 总完成时间减少15分钟
+```
+
+### 使用示例
+
+```
+// 场景1: 标准调度
+PL → agent-dispatcher.schedule_tasks({
+  tasks: [SD-1, SD-2, SD-3, UID-1, UID-2],
+  available_agents: ["game-systems-designer", "frontend-visual-crafter"],
+  strategy: "HYBRID"
+})
+返回: SCHEDULE_PLAN
+
+// 场景2: 指定依赖关系
+PL → agent-dispatcher.schedule_tasks({
+  tasks: [
+    { id: "SD-1", agent: "game-systems-designer", duration: 60, dependencies: [] },
+    { id: "SD-2", agent: "game-systems-designer", duration: 45, dependencies: ["SD-1"] },
+    { id: "UID-1", agent: "frontend-visual-crafter", duration: 40, dependencies: [] }
+  ],
+  strategy: "DEPENDENCY"
+})
+返回: 按依赖关系优化的调度计划
+
+// 场景3: 动态调整
+PL → agent-dispatcher.adjust_schedule({
+  completed_task: "SD-1",
+  actual_duration: 45  // 提前完成
+})
+返回: 更新后的调度计划
+```
+
+### 性能指标
+
+| 指标 | 说明 | 目标值 |
+|------|------|--------|
+| **Makespan** | 总完成时间 | 最小化 |
+| **并行效率** | 实际并行度/理论最大并行度 | >70% |
+| **负载均衡度** | 各智能体负载标准差 | <20% |
+| **资源利用率** | 智能体忙碌时间/总时间 | >60% |
+| **响应时间** | 任务分配到开始的时间 | <5分钟 |
+
+---

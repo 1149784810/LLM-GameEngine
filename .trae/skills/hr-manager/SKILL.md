@@ -180,6 +180,174 @@ hr-manager (人员分配) ← 当前技能
 
 ---
 
+## 动态并行度调整 ⭐新增
+
+### 概述
+
+根据**项目规模**和**可用资源**动态计算最优并行人数，避免固定数值导致的资源浪费或不足。
+
+### 项目规模评估
+
+```typescript
+PROJECT_SIZE_CALCULATION ::= {
+  // 功能点权重配置
+  weights: {
+    system_module: 1.0,      // 系统模块
+    ui_screen: 0.5,          // UI界面
+    gameplay_feature: 1.5,   // 玩法功能
+    integration_point: 0.8,  // 集成点
+    data_entity: 0.3         // 数据实体
+  },
+  
+  // 规模分级
+  classification: {
+    micro:    { max_points: 5,   label: "微型项目" },
+    small:    { max_points: 15,  label: "小型项目" },
+    medium:   { max_points: 40,  label: "中型项目" },
+    large:    { min_points: 40,  label: "大型项目" }
+  }
+}
+
+// 计算示例：点击游戏
+// 系统模块(4) + UI界面(2) + 玩法功能(4) + 集成点(2)
+// = 4×1.0 + 2×0.5 + 4×1.5 + 2×0.8 = 4 + 1 + 6 + 1.6 = 12.6功能点
+// 结果：small（小型项目）
+```
+
+### 动态并行度计算公式
+
+```typescript
+FUNCTION: calculate_parallel_count(
+  project_size: PROJECT_SIZE,
+  available_agents: INT,
+  phase: PHASE
+) → PARALLEL_CONFIG
+
+输入:
+  - project_size: 项目规模（功能点数）
+  - available_agents: 可用智能体数量
+  - phase: 当前阶段（Phase 1/2/3）
+
+输出:
+  - PARALLEL_CONFIG: 并行配置
+
+计算逻辑:
+  1. 基础并行数 = f(project_size)
+     - micro:   3-4人
+     - small:   5-6人
+     - medium:  6-8人
+     - large:   8-12人
+  
+  2. 资源约束 = min(基础并行数, available_agents)
+  
+  3. 阶段调整 = g(资源约束, phase)
+     - Phase 1（设计阶段）: ×1.0（完整并行）
+     - Phase 2（开发阶段）: ×1.0（完整并行）
+     - Phase 3（测试阶段）: ×0.6（减少并行，提高质量）
+  
+  4. 最终并行数 = round(阶段调整)
+
+PARALLEL_CONFIG ::= {
+  target_count: INT,           // 目标并行人数
+  min_count: INT,              // 最低并行人数
+  max_count: INT,              // 最高并行人数
+  recommended_roles: [ROLE_ID], // 推荐角色列表
+  fallback_strategy: STRING    // 资源不足时的回退策略
+}
+```
+
+### 并行度配置表
+
+| 项目规模 | 功能点范围 | Phase 1 | Phase 2 | Phase 3 | 说明 |
+|----------|-----------|---------|---------|---------|------|
+| **微型** | <5 | 3-4人 | 3-4人 | 2-3人 | 超小型项目 |
+| **小型** | 5-15 | 5-6人 | 5-6人 | 3-4人 | 如点击游戏 |
+| **中型** | 15-40 | 6-8人 | 6-8人 | 4-5人 | 标准项目 |
+| **大型** | >40 | 8-12人 | 8-12人 | 5-8人 | 复杂项目 |
+
+### 资源不足时的回退策略
+
+当 `available_agents < min_count` 时：
+
+| 策略 | 适用场景 | 具体措施 |
+|------|----------|----------|
+| **任务合并** | 差距1-2人 | 将相关小模块合并，减少角色数量 |
+| **分批执行** | 差距3-5人 | 角色分批启动，先核心后外围 |
+| **简化范围** | 差距>5人 | 与PL协商，简化项目范围或延期 |
+| **智能体扩展** | 长期不足 | 安装缺失的智能体技能 |
+
+### 使用示例
+
+```
+// 场景1: 点击游戏（小型项目）
+PL → hr-manager.calculate_parallel_count({
+  project_size: 12.6,  // 功能点
+  available_agents: 8, // 可用智能体
+  phase: "Phase 1"
+})
+返回: {
+  target_count: 5,      // 小型项目Phase 1推荐5人
+  min_count: 3,         // 最低3人
+  max_count: 6,         // 最高6人
+  recommended_roles: ["SD-1", "SD-2", "UID-1", "BD-1", "LvD-1"],
+  fallback_strategy: "任务合并" // 如只有3人，合并相关模块
+}
+
+// 场景2: RPG游戏（中型项目）
+PL → hr-manager.calculate_parallel_count({
+  project_size: 25,
+  available_agents: 10,
+  phase: "Phase 2"
+})
+返回: {
+  target_count: 6,      // 中型项目Phase 2推荐6人
+  min_count: 4,
+  max_count: 8,
+  recommended_roles: ["SD-1", "SD-2", "UID-1", "BD-1", "LvD-1", "CD-1"],
+  fallback_strategy: "分批执行"
+}
+
+// 场景3: 资源不足情况
+PL → hr-manager.calculate_parallel_count({
+  project_size: 25,
+  available_agents: 3,  // 严重不足
+  phase: "Phase 1"
+})
+返回: {
+  target_count: 3,      // 只能启动3人
+  min_count: 3,
+  max_count: 3,
+  recommended_roles: ["SD-1", "UID-1", "BD-1"],
+  fallback_strategy: "简化范围", // 建议简化项目范围
+  warning: "可用智能体严重不足，建议安装缺失技能或简化项目范围"
+}
+```
+
+### 配置覆盖
+
+允许在项目配置中覆盖默认计算：
+
+```typescript
+PROJECT_CONFIG ::= {
+  parallel_settings: {
+    mode: "AUTO" | "MANUAL",     // 自动计算或手动指定
+    manual_count: null | INT,     // 手动指定并行数
+    min_override: null | INT,     // 覆盖最低并行数
+    max_override: null | INT      // 覆盖最高并行数
+  }
+}
+
+// 示例：强制使用6人
+{
+  parallel_settings: {
+    mode: "MANUAL",
+    manual_count: 6
+  }
+}
+```
+
+---
+
 ## 按执行位分配角色
 
 ### Phase 1 第1位（阻塞式）

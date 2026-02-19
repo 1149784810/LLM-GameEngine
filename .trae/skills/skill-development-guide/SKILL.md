@@ -252,9 +252,119 @@ PL 调用 requirement-normalizer 进行需求澄清
 
 ---
 
-## 六、技能开发检查清单
+## 六、技能依赖层级图 ⭐新增
 
-### 6.1 创建新技能时
+### 6.1 层级架构
+
+为避免技能间循环依赖，所有技能必须遵循以下层级结构：
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     技能依赖层级架构                              │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  Layer 0: 基础设施层（无依赖）                                   │
+│  ├── terminology-standard      # 术语标准（最底层）              │
+│  ├── security-guard            # 安全检测                        │
+│  └── output-normalizer         # 输出规范                        │
+│                                                                 │
+│  Layer 1: 核心定义层（依赖Layer 0）                              │
+│  ├── fullstack-game-engine     # 全栈游戏引擎流程定义            │
+│  └── skill-development-guide   # 技能开发规范（本文档）          │
+│                                                                 │
+│  Layer 2: 管理工具层（依赖Layer 0-1）                            │
+│  ├── state-manager             # 状态管理                        │
+│  ├── event-bus                 # 事件总线                        │
+│  ├── command-manager           # 命令管理                        │
+│  ├── contract-validator        # 契约验证                        │
+│  └── project-flow-manager      # 流程管理                        │
+│                                                                 │
+│  Layer 3: 业务逻辑层（依赖Layer 0-2）                            │
+│  ├── fullstack-engine-init     # 引擎初始化                      │
+│  ├── hr-manager                # 人力资源管理                    │
+│  ├── agent-dispatcher          # 智能体调度                      │
+│  ├── qa-standards-manager      # QA标准管理                      │
+│  └── project-optimizer         # 项目优化                        │
+│                                                                 │
+│  Layer 4: 辅助工具层（依赖Layer 0-3）                            │
+│  ├── project-experience-summarizer  # 经验总结                   │
+│  ├── skill-optimizer           # 技能优化                        │
+│  ├── git-version-control       # Git版本控制                     │
+│  ├── bug-tracker               # Bug追踪                        │
+│  ├── asset-generation-manager  # 资产生成                        │
+│  ├── engine-module-debugger    # 引擎调试                        │
+│  ├── pl-authority-guard        # PL权限守卫                      │
+│  └── flow-strategy             # 流程策略                        │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 6.2 依赖规则
+
+| 规则 | 说明 | 违规后果 |
+|------|------|----------|
+| **禁止跨层级引用** | Layer 3 不能直接引用 Layer 0 | 架构混乱，难以维护 |
+| **只允许引用同层或下层** | Layer 2 可以引用 Layer 0-1 | 确保依赖单向性 |
+| **禁止循环依赖** | A引用B，B不能引用A | 初始化死锁，逻辑混乱 |
+| **优先引用相邻层** | Layer 3 优先引用 Layer 2 | 减少耦合度 |
+
+### 6.3 依赖检查清单
+
+创建或更新技能时，必须检查：
+
+- [ ] **确认本技能所属层级**（参考6.1层级架构）
+- [ ] **检查所有引用技能层级**（被引用技能必须在同层或下层）
+- [ ] **验证无跨层级引用**（如Layer 3直接引用Layer 0）
+- [ ] **验证无循环依赖**（使用工具检查依赖图）
+- [ ] **记录依赖关系到技能文档**（在SKILL.md中声明）
+
+### 6.4 依赖声明格式
+
+每个技能必须在文档开头声明依赖关系：
+
+```markdown
+---
+name: "example-skill"
+description: "示例技能"
+dependencies:
+  - terminology-standard    # Layer 0
+  - fullstack-game-engine   # Layer 1
+  - state-manager           # Layer 2
+layer: 3  # 本技能所属层级
+---
+
+# 示例技能
+
+> **依赖声明**：
+> - Layer 0: [terminology-standard](.trae/skills/terminology-standard/SKILL.md)
+> - Layer 1: [fullstack-game-engine](.trae/skills/fullstack-game-engine/SKILL.md)
+> - Layer 2: [state-manager](.trae/skills/state-manager/SKILL.md)
+> 
+> **本技能层级**: Layer 3
+```
+
+### 6.5 循环依赖检测
+
+使用以下方法检测循环依赖：
+
+```bash
+# 运行依赖检测脚本
+node tools/skill-dependency-checker.js
+
+# 输出示例
+✅ terminology-standard: 无依赖
+✅ security-guard: 无依赖
+✅ fullstack-game-engine: 依赖 [terminology-standard] ✅
+✅ state-manager: 依赖 [terminology-standard, event-bus] ✅
+❌ bad-skill: 检测到循环依赖!
+   state-manager → event-bus → state-manager
+```
+
+---
+
+## 七、技能开发检查清单
+
+### 7.1 创建新技能时
 
 - [ ] 已查阅 terminology-standard，使用标准术语
 - [ ] 已使用 skill-optimizer 检查重复

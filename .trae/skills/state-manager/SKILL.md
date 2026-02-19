@@ -325,6 +325,269 @@ STATE_DIFF ::= {
 
 ---
 
+## 与事件总线集成 ⭐新增
+
+### 集成架构
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    状态-事件集成架构                      │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│   ┌──────────────┐      状态变更事件      ┌──────────┐ │
+│   │ StateManager │ ─────────────────────→ │ EventBus │ │
+│   └──────────────┘                        └──────────┘ │
+│          ↑                                    │        │
+│          │         历史事件查询               │        │
+│          └────────────────────────────────────┘        │
+│                                                         │
+│   集成点：                                               │
+│   1. save_checkpoint() → 发布 STATE_SAVED 事件         │
+│   2. rollback_to()     → 查询事件历史 + 发布 ROLLBACK_COMPLETED │
+│   3. 状态diff          → 生成 STATE_CHANGED 事件        │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+### 集成接口
+
+#### 8. 发布状态变更事件
+
+```
+FUNCTION: publish_state_change(
+  previous_state: STATE|null,
+  current_state: STATE,
+  change_type: "CHECKPOINT" | "ROLLBACK" | "UPDATE"
+) → { success: BOOL, event_id: UUID }
+
+输入:
+  - previous_state: 变更前状态（null表示初始状态）
+  - current_state: 变更后状态
+  - change_type: 变更类型
+
+输出:
+  - success: 是否成功
+  - event_id: 事件ID
+
+副作用:
+  - 调用 event-bus.publish() 发布 STATE_SAVED 或 STATE_ROLLED_BACK 事件
+  - 更新 current_state.event_log_anchor
+
+事件负载格式:
+  {
+    event_type: "STATE_SAVED" | "STATE_ROLLED_BACK",
+    payload: {
+      state_id: UUID,
+      previous_state_id: UUID|null,
+      change_summary: {
+        position_change: { from: POSITION, to: POSITION }|null,
+        bp_changes: [{ bp_id: BP-XXX, from: STATUS, to: STATUS }],
+        role_changes: [{ role_id: ROLE_ID, from: STATUS, to: STATUS }],
+        artifact_changes: { added: INT, modified: INT, removed: INT }
+      },
+      change_type: "CHECKPOINT" | "ROLLBACK" | "UPDATE"
+    },
+    context: {
+      project_name: STRING,
+      state_id: UUID,
+      triggered_by: "state-manager"
+    }
+  }
+
+示例:
+  // 在 save_checkpoint() 内部调用
+  state-manager.publish_state_change(prev_state, new_state, "CHECKPOINT")
+  返回: { success: true, event_id: "event-005" }
+  // new_state.event_log_anchor 自动更新为 "event-005"
+```
+
+#### 9. 获取状态变更历史（基于事件）
+
+```
+FUNCTION: get_state_changes_via_events(
+  state_id: UUID,
+  options: { include_details: BOOL = false }
+) → STATE_CHANGE_HISTORY
+
+输入:
+  - state_id: 状态ID
+  - options: 选项
+
+输出:
+  - STATE_CHANGE_HISTORY: 状态变更历史
+
+实现:
+  1. 获取指定状态的 event_log_anchor
+  2. 调用 event-bus.get_event_log() 查询相关事件
+  3. 按时间顺序组装变更历史
+
+STATE_CHANGE_HISTORY ::= {
+  state_id: UUID,
+  created_at: ISO8601,
+  created_by_event: UUID,
+  previous_state_id: UUID|null,
+  change_chain: [{
+    event_id: UUID,
+    event_type: "STATE_SAVED" | "STATE_ROLLED_BACK" | "BP_UNLOCKED" | ...,
+    timestamp: ISO8601,
+    summary: STRING,
+    details: OBJECT|null  // 当 include_details=true 时
+  }]
+}
+
+示例:
+  PL → state-manager.get_state_changes_via_events("uuid-003", { include_details: true })
+  返回: {
+    state_id: "uuid-003",
+    created_at: "2024-02-19T10:30:00Z",
+    created_by_event: "event-003",
+    previous_state_id: "uuid-002",
+    change_chain: [
+      {
+        event_id: "event-002",
+        event_type: "BP_UNLOCKED",
+        timestamp: "2024-02-19T10:15:00Z",
+        summary: "阻塞点 BP-003 解锁",
+        details: { bp_id: "BP-003", unlocked_by: "LD" }
+      },
+      {
+        event_id: "event-003",
+        event_type: "STATE_SAVED",
+        timestamp: "2024-02-19T10:30:00Z",
+        summary: "状态检查点: Stage-1-2-complete",
+        details: { ... }
+      }
+    ]
+  }
+```
+
+#### 10. 生成回滚计划（基于事件历史）
+
+```
+FUNCTION: generate_rollback_plan_with_events(
+  current_state_id: UUID,
+  target_state_id: UUID
+) → ROLLBACK_PLAN_WITH_EVENTS
+
+输入:
+  - current_state_id: 当前状态ID
+  - target_state_id: 目标状态ID
+
+输出:
+  - ROLLBACK_PLAN_WITH_EVENTS: 增强版回滚计划
+
+实现:
+  1. 调用 event-bus.get_event_log() 获取两个状态之间的事件
+  2. 分析事件序列，识别需要逆向的操作
+  3. 生成详细的回滚步骤
+
+ROLLBACK_PLAN_WITH_EVENTS ::= {
+  ...ROLLBACK_PLAN,
+  event_analysis: {
+    events_to_revert: [{
+      event_id: UUID,
+      event_type: EVENT_TYPE,
+      revert_action: STRING,
+      revert_payload: OBJECT
+    }],
+    events_to_replay: [EVENT_ID],  // 回滚后需要重放的事件
+    side_effects: [STRING]         // 可能的副作用警告
+  },
+  step_by_step_guide: [STRING]     // 人类可读的操作步骤
+}
+
+示例:
+  PL → state-manager.generate_rollback_plan_with_events("uuid-006", "uuid-003")
+  返回: {
+    target_state: STATE { ... },
+    states_to_discard: ["uuid-004", "uuid-005", "uuid-006"],
+    artifacts_to_remove: [...],
+    artifacts_to_restore: [],
+    roles_to_reassign: ["SD-1", "SD-2"],
+    blocking_points_to_reset: ["BP-004"],
+    event_analysis: {
+      events_to_revert: [
+        {
+          event_id: "event-004",
+          event_type: "ARTIFACT_CREATED",
+          revert_action: "删除产出物",
+          revert_payload: { path: "docs/02-策划文档/SD-1-xxx.md" }
+        },
+        {
+          event_id: "event-005",
+          event_type: "ROLE_COMPLETED",
+          revert_action: "重置角色状态",
+          revert_payload: { role_id: "SD-1", status: "PENDING" }
+        }
+      ],
+      events_to_replay: [],
+      side_effects: ["SD-1 的工作进度将丢失", "BP-004 将重新锁定"]
+    },
+    step_by_step_guide: [
+      "1. 确认目标状态 uuid-003 (Stage-1-2-complete) 完整性",
+      "2. 删除 uuid-004 至 uuid-006 的状态文件",
+      "3. 删除产出物: docs/02-策划文档/SD-1-xxx.md",
+      "4. 重置角色 SD-1 状态为 PENDING",
+      "5. 锁定阻塞点 BP-004",
+      "6. 创建新状态 uuid-007，标记为回滚结果"
+    ]
+  }
+```
+
+### 集成配置
+
+```typescript
+// 状态管理器配置
+STATE_MANAGER_CONFIG ::= {
+  // 事件总线集成
+  event_bus: {
+    enabled: true,                    // 启用事件集成
+    auto_publish: true,               // 自动发布状态变更事件
+    publish_on_checkpoint: true,      // 检查点时发布
+    publish_on_rollback: true,        // 回滚时发布
+    include_diff_in_event: true,      // 事件中包含差异详情
+    event_history_limit: 1000         // 事件历史保留数量
+  },
+  
+  // 回滚配置
+  rollback: {
+    use_event_history: true,          // 使用事件历史辅助回滚
+    generate_step_guide: true,        // 生成步骤指南
+    warn_on_side_effects: true        // 副作用警告
+  }
+}
+```
+
+### 使用示例
+
+```
+// 场景1: 保存检查点时自动发布事件
+PL → state-manager.save_checkpoint(state, "Stage-1-2-complete", true)
+  内部流程:
+    1. 创建新状态 new_state
+    2. 计算与 previous_state 的差异
+    3. 调用 publish_state_change(previous_state, new_state, "CHECKPOINT")
+    4. event-bus 发布 STATE_SAVED 事件
+    5. 返回 new_state（包含更新的 event_log_anchor）
+
+// 场景2: 回滚时查询事件历史
+PL → state-manager.rollback_to("uuid-003")
+  内部流程:
+    1. 调用 generate_rollback_plan_with_events(current, target)
+    2. 查询事件历史，分析需要逆向的操作
+    3. 生成详细的回滚计划（包含步骤指南）
+    4. 执行回滚操作
+    5. 调用 publish_state_change(null, new_state, "ROLLBACK")
+    6. event-bus 发布 STATE_ROLLED_BACK 事件
+    7. 返回回滚结果
+
+// 场景3: 查看状态完整历史
+PL → state-manager.get_state_changes_via_events("uuid-005", { include_details: true })
+  返回: 从初始状态到 uuid-005 的完整变更链
+```
+
+---
+
 ## 数据存储规范
 
 ### 目录结构

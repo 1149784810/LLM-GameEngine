@@ -300,6 +300,219 @@ PL → event-bus.publish({
 
 ---
 
+## 与状态管理器集成 ⭐新增
+
+### 集成架构
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    事件-状态集成架构                      │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│   ┌──────────┐      状态查询/更新        ┌──────────────┐│
+│   │ EventBus │ ←──────────────────────→ │ StateManager ││
+│   └──────────┘                           └──────────────┘│
+│        │                                          │      │
+│        │         事件驱动状态变更                 │      │
+│        └──────────────────────────────────────────┘      │
+│                                                         │
+│   集成点：                                               │
+│   1. 事件发布时自动关联当前状态ID                        │
+│   2. 支持按状态ID查询相关事件                            │
+│   3. 支持事件驱动的状态变更                              │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+### 集成接口
+
+#### 5. 获取指定状态相关的事件
+
+```
+FUNCTION: get_events_by_state(
+  state_id: UUID,
+  options: { 
+    include_previous: BOOL = false,  // 是否包含前序状态的事件
+    include_subsequent: BOOL = false, // 是否包含后续状态的事件
+    event_types: [EVENT_TYPE]|null    // 事件类型过滤
+  }
+) → STATE_EVENTS
+
+输入:
+  - state_id: 状态ID
+  - options: 查询选项
+
+输出:
+  - STATE_EVENTS: 状态相关事件集合
+
+STATE_EVENTS ::= {
+  state_id: UUID,
+  created_by: EVENT_ID,           // 创建该状态的事件
+  events_in_state: [EVENT],       // 该状态下发生的事件
+  previous_chain: [EVENT]|null,   // 前序事件链（如果 include_previous=true）
+  subsequent_chain: [EVENT]|null  // 后续事件链（如果 include_subsequent=true）
+}
+
+实现:
+  1. 查询 event.context.state_id = state_id 的所有事件
+  2. 如果 include_previous=true，递归查询 parent_state_id 链
+  3. 如果 include_subsequent=true，查询该状态之后的所有事件
+
+示例:
+  PL → event-bus.get_events_by_state("uuid-003", { 
+    include_previous: true, 
+    event_types: ["BP_UNLOCKED", "ROLE_COMPLETED"] 
+  })
+  返回: {
+    state_id: "uuid-003",
+    created_by: "event-003",
+    events_in_state: [
+      { event_id: "event-004", event_type: "ROLE_STARTED", ... },
+      { event_id: "event-005", event_type: "ARTIFACT_CREATED", ... }
+    ],
+    previous_chain: [
+      { event_id: "event-001", event_type: "FLOW_INITIALIZED", ... },
+      { event_id: "event-002", event_type: "BP_UNLOCKED", ... },
+      { event_id: "event-003", event_type: "STATE_SAVED", ... }
+    ]
+  }
+```
+
+#### 6. 获取状态变更事件序列
+
+```
+FUNCTION: get_state_change_events(
+  project_name: STRING,
+  options: { 
+    from_state_id: UUID|null,
+    to_state_id: UUID|null,
+    include_bp_events: BOOL = true,
+    include_role_events: BOOL = true
+  }
+) → [STATE_CHANGE_EVENT]
+
+输入:
+  - project_name: 项目名称
+  - options: 查询选项
+
+输出:
+  - [STATE_CHANGE_EVENT]: 状态变更事件序列
+
+STATE_CHANGE_EVENT ::= {
+  event_id: UUID,
+  timestamp: ISO8601,
+  event_type: "STATE_SAVED" | "STATE_ROLLED_BACK" | "BP_UNLOCKED" | "ROLE_COMPLETED" | ...,
+  state_id: UUID,
+  summary: STRING,
+  details: OBJECT
+}
+
+实现:
+  1. 查询项目相关的所有 STATE_SAVED 和 STATE_ROLLED_BACK 事件
+  2. 根据选项包含 BP 解锁和角色完成事件
+  3. 按时间顺序排序
+
+示例:
+  PL → event-bus.get_state_change_events("clicker-game", { 
+    include_bp_events: true 
+  })
+  返回: [
+    { event_id: "event-001", timestamp: "2024-02-19T10:00:00Z", event_type: "FLOW_INITIALIZED", state_id: "uuid-001", summary: "流程初始化", ... },
+    { event_id: "event-002", timestamp: "2024-02-19T10:15:00Z", event_type: "BP_UNLOCKED", state_id: "uuid-002", summary: "BP-002 解锁", ... },
+    { event_id: "event-003", timestamp: "2024-02-19T10:30:00Z", event_type: "STATE_SAVED", state_id: "uuid-002", summary: "检查点: BP-002-unlocked", ... },
+    { event_id: "event-004", timestamp: "2024-02-19T11:00:00Z", event_type: "ROLE_COMPLETED", state_id: "uuid-003", summary: "SD-1 完成", ... },
+    ...
+  ]
+```
+
+#### 7. 订阅状态变更事件
+
+```
+FUNCTION: subscribe_state_changes(
+  project_name: STRING,
+  handler: FUNCTION,
+  filter: { 
+    state_types: ["CHECKPOINT" | "ROLLBACK" | "UPDATE"]|null,
+    bp_ids: [BP-XXX]|null,
+    role_ids: [ROLE_ID]|null
+  } = {}
+) → subscription_id
+
+输入:
+  - project_name: 项目名称
+  - handler: 事件处理函数 (event) → void
+  - filter: 过滤条件
+
+输出:
+  - subscription_id: 订阅ID
+
+实现:
+  1. 内部订阅 ["STATE_SAVED", "STATE_ROLLED_BACK"] 事件
+  2. 根据 filter 条件过滤事件
+  3. 调用 handler 处理符合条件的事件
+
+示例:
+  // 订阅所有检查点事件
+  PL → event-bus.subscribe_state_changes(
+    "clicker-game",
+    (event) => { console.log(`检查点: ${event.payload.checkpoint_name}`) },
+    { state_types: ["CHECKPOINT"] }
+  )
+  返回: "sub-state-001"
+```
+
+### 集成配置
+
+```typescript
+// 事件总线配置
+EVENT_BUS_CONFIG ::= {
+  // 状态管理器集成
+  state_manager: {
+    enabled: true,                    // 启用状态集成
+    auto_link_state: true,            // 自动关联当前状态ID到事件
+    persist_state_reference: true,    // 持久化状态引用
+    enable_state_query: true          // 启用按状态查询
+  },
+  
+  // 事件索引配置
+  indexing: {
+    by_state_id: true,                // 按状态ID索引
+    by_event_type: true,              // 按事件类型索引
+    by_timestamp: true,               // 按时间戳索引
+    by_correlation_id: true           // 按关联ID索引
+  }
+}
+```
+
+### 使用示例
+
+```
+// 场景1: 发布事件时自动关联状态
+PL → event-bus.publish({
+  event_type: "BP_UNLOCKED",
+  payload: { bp_id: "BP-003", unlocked_by: "LD" },
+  context: { 
+    project_name: "clicker-game", 
+    state_id: "uuid-003",           // 自动关联当前状态
+    triggered_by: "LD" 
+  }
+})
+
+// 场景2: 查询某个状态下的所有事件
+PL → event-bus.get_events_by_state("uuid-005", { include_previous: true })
+  返回: 从初始状态到 uuid-005 的所有事件链
+
+// 场景3: 获取完整的状态变更历史
+PL → event-bus.get_state_change_events("clicker-game", {})
+  返回: 项目的完整状态演进历史
+
+// 场景4: 订阅状态变更
+PL → event-bus.subscribe_state_changes("clicker-game", handler, { state_types: ["CHECKPOINT"] })
+  // 每当创建检查点时，handler 被调用
+```
+
+---
+
 ## 注意事项
 
 1. **事件管理专注**：本技能只负责事件管理，不定义流程
