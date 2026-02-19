@@ -7,6 +7,8 @@ description: "事件总线，负责接收和分发游戏开发流程事件，实
 
 > **术语引用**：[terminology-standard](.trae/skills/terminology-standard/SKILL.md)
 > 
+> **流程引用**：[fullstack-game-engine](.trae/skills/fullstack-game-engine/SKILL.md)
+> 
 > **状态引用**：[state-manager](.trae/skills/state-manager/SKILL.md)
 
 ---
@@ -19,7 +21,19 @@ description: "事件总线，负责接收和分发游戏开发流程事件，实
 - 支持事件订阅和监听
 - 事件回放和重放
 
+> **注意**：本技能只负责事件管理，不定义开发流程。流程定义参见 [fullstack-game-engine](.trae/skills/fullstack-game-engine/SKILL.md)。
+
 > **核心原则**：流程推进由事件驱动，各技能只关注自己关心的事件
+
+---
+
+## 调用时机
+
+**在以下时机调用：**
+- 流程状态变更时：发布事件
+- 需要监听特定事件时：订阅事件
+- 需要追溯历史时：查询事件日志
+- 需要调试时：回放事件
 
 ---
 
@@ -37,7 +51,7 @@ EVENT ::= {
   
   context: {
     project_name: STRING,
-    state_id: UUID,           // 关联的状态ID
+    state_id: UUID,           // 关联的状态ID（引用 state-manager）
     triggered_by: ROLE_ID     // 触发者
   },
   
@@ -49,19 +63,19 @@ EVENT ::= {
 }
 
 EVENT_TYPE ::=
-  // 流程事件
+  // 流程事件（引用 fullstack-game-engine 定义）
   | "FLOW_INITIALIZED"        // 流程初始化
   | "PHASE_STARTED"           // 阶段开始
   | "PHASE_COMPLETED"         // 阶段完成
   | "STAGE_STARTED"           // 子阶段开始
   | "STAGE_COMPLETED"         // 子阶段完成
   
-  // 阻塞点事件
+  // 阻塞点事件（引用 project-flow-manager 管理）
   | "BP_LOCKED"               // 阻塞点锁定
   | "BP_UNLOCKED"             // 阻塞点解锁
   | "BP_BLOCKED"              // 阻塞点阻塞
   
-  // 角色事件
+  // 角色事件（引用 hr-manager 分配）
   | "ROLE_ASSIGNED"           // 角色分配
   | "ROLE_STARTED"            // 角色开始工作
   | "ROLE_COMPLETED"          // 角色完成
@@ -72,11 +86,11 @@ EVENT_TYPE ::=
   | "ARTIFACT_MODIFIED"       // 产出物修改
   | "ARTIFACT_VALIDATED"      // 产出物验证
   
-  // 验证事件
+  // 验证事件（引用 qa-standards-manager 标准）
   | "VALIDATION_PASSED"       // 验证通过
   | "VALIDATION_FAILED"       // 验证失败
   
-  // 状态事件
+  // 状态事件（引用 state-manager 管理）
   | "STATE_SAVED"             // 状态保存
   | "STATE_ROLLED_BACK"       // 状态回滚
   | "ROLLBACK_COMPLETED"      // 回滚完成
@@ -200,8 +214,106 @@ FUNCTION: replay_events(
 
 ---
 
+## 数据存储规范
+
+### 目录结构
+
+```
+projects/{project_name}/
+├── .events/                         # 事件存储目录
+│   ├── event_log.json               # 事件日志主文件
+│   ├── event_index.json             # 事件索引
+│   └── archive/                     # 归档事件（超过30天的）
+│       └── events_{date}.json.gz
+```
+
+### 事件文件格式
+
+```json
+{
+  "event_id": "event-001",
+  "event_type": "BP_UNLOCKED",
+  "timestamp": "2024-02-19T10:30:00Z",
+  "payload": {
+    "bp_id": "BP-003",
+    "unlocked_by": "PL"
+  },
+  "context": {
+    "project_name": "clicker-game",
+    "state_id": "uuid-001",
+    "triggered_by": "PL"
+  },
+  "metadata": {
+    "version": "1.0",
+    "priority": "HIGH",
+    "correlation_id": null
+  }
+}
+```
+
+---
+
+## 使用示例
+
+### 完整流程事件管理
+
+```
+// 1. 流程初始化
+PL → event-bus.publish({
+  event_type: "FLOW_INITIALIZED",
+  payload: { project_name: "clicker-game" },
+  context: { project_name: "clicker-game", state_id: "uuid-001", triggered_by: "PL" }
+})
+
+// 2. Phase 1 开始
+PL → event-bus.publish({
+  event_type: "PHASE_STARTED",
+  payload: { phase: 1 },
+  context: { project_name: "clicker-game", state_id: "uuid-002", triggered_by: "PL" }
+})
+
+// 3. BP-002 解锁
+PL → event-bus.publish({
+  event_type: "BP_UNLOCKED",
+  payload: { bp_id: "BP-002", unlocked_by: "LD" },
+  context: { project_name: "clicker-game", state_id: "uuid-003", triggered_by: "LD" }
+})
+
+// 4. 角色完成
+PL → event-bus.publish({
+  event_type: "ROLE_COMPLETED",
+  payload: { role_id: "SD-1", task: "M001" },
+  context: { project_name: "clicker-game", state_id: "uuid-004", triggered_by: "SD-1" }
+})
+```
+
+---
+
+## 接口汇总
+
+| 接口 | 输入 | 输出 | 调用方 |
+|------|------|------|--------|
+| `publish` | EVENT | {success, event_id} | PL/技能 |
+| `subscribe` | event_types, handler, filter | subscription_id | PL/技能 |
+| `get_event_log` | filter, options | [EVENT] | PL/技能 |
+| `replay_events` | from_event_id, to_event_id, speed | REPLAY_RESULT | PL |
+
+---
+
+## 注意事项
+
+1. **事件管理专注**：本技能只负责事件管理，不定义流程
+2. **流程引用**：事件类型引用 [fullstack-game-engine](.trae/skills/fullstack-game-engine/SKILL.md) 定义的流程
+3. **状态关联**：事件关联的状态ID引用 [state-manager](.trae/skills/state-manager/SKILL.md) 管理
+4. **角色引用**：事件触发者引用 [hr-manager](.trae/skills/hr-manager/SKILL.md) 分配的角色
+5. **阻塞点引用**：阻塞点事件引用 [project-flow-manager](.trae/skills/project-flow-manager/SKILL.md) 管理
+6. **术语一致**：所有描述必须使用 [terminology-standard](.trae/skills/terminology-standard/SKILL.md) 定义的标准术语
+
+---
+
 ## 版本记录
 
 | 版本 | 日期 | 变更内容 |
 |------|------|---------|
+| v1.1 | 2024-02-20 | 重构：明确职责边界，统一引用格式 |
 | v1.0 | 2024-02-19 | 初始版本，支持完整事件流管理 |
