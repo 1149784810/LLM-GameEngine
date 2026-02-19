@@ -7,10 +7,14 @@
  *   node cli.js test-all
  *   node cli.js test --skill=<name>
  *   node cli.js suite --name=<suite>
- *   node cli.js report --output=<path>
+ *   node cli.js report [--output=<path>]
+ * 
+ * 报告归档格式：
+ *   reports/etf-v{框架版本}-engine-v{引擎版本}-{日期}/test-report-{时间戳}.md
  */
 
 const path = require('path');
+const fs = require('fs');
 const { TestRunner, COLORS } = require('./core/test-runner');
 const { HeaderTestSuite } = require('./suites/header-test-suite');
 const { DependencyTestSuite } = require('./suites/dependency-test-suite');
@@ -20,9 +24,26 @@ const { ParallelStageTestSuite } = require('./suites/parallel-stage-test-suite')
 const { AgentDispatchTestSuite } = require('./suites/agent-dispatch-test-suite');
 const { QAStageTestSuite } = require('./suites/qa-stage-test-suite');
 
+const FRAMEWORK_VERSION = '2.3.0';
+const ENGINE_VERSION = '1.0.0';
+
+function getArchiveFolderName() {
+    const now = new Date();
+    const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+    return `etf-v${FRAMEWORK_VERSION}-engine-v${ENGINE_VERSION}-${dateStr}`;
+}
+
+function getDefaultReportPath() {
+    const projectRoot = path.resolve(__dirname, '..', '..');
+    const archiveFolder = getArchiveFolderName();
+    const archiveDir = path.join(projectRoot, 'reports', archiveFolder);
+    const timestamp = Date.now();
+    return path.join(archiveDir, `test-report-${timestamp}.md`);
+}
+
 function printHelp() {
     console.log(`
-${COLORS.HEADER}Engine Test Framework v2.0${COLORS.RESET}
+${COLORS.HEADER}Engine Test Framework v${FRAMEWORK_VERSION}${COLORS.RESET}
 
 Usage:
   node cli.js <command> [options]
@@ -31,7 +52,7 @@ Commands:
   test-all                  Run all tests on all skills
   test --skill=<name>       Run all tests on a single skill
   suite --name=<suite>      Run a specific test suite
-  report --output=<path>    Generate markdown report
+  report [--output=<path>]  Generate markdown report (auto-archive if no path)
 
 Suites:
   header        Header metadata validation
@@ -40,10 +61,13 @@ Suites:
   blockage      Blockage point definition validation
   parallel      Parallel stage definition validation
   agent-dispatch Agent dispatch record validation
-  qa-stage      QA test stage validation (anti-hallucination, evidence, regression) ⭐新增
+  qa-stage      QA test stage validation (anti-hallucination, evidence, regression)
   flow          Run blockage + parallel + agent-dispatch (flow validation)
-  qa            Run qa-stage (QA validation) ⭐新增
+  qa            Run qa-stage (QA validation)
   all           Run all suites
+
+Report Archive Format:
+  reports/etf-v{version}-engine-v{version}-{YYYYMMDD}/test-report-{timestamp}.md
 
 Options:
   --verbose, -v    Enable verbose output
@@ -53,7 +77,8 @@ Examples:
   node cli.js test-all
   node cli.js test --skill=contract-validator
   node cli.js suite --name=header
-  node cli.js suite --name=flow
+  node cli.js report
+  node cli.js report --output=reports/custom-report.md
   node cli.js test-all --json > results.json
 `);
 }
@@ -187,15 +212,13 @@ async function main() {
         
         case 'report': {
             const outputArg = args.find(a => a.startsWith('--output='));
-            const projectRoot = path.resolve(__dirname, '..', '..');
-            const reportsDir = path.join(projectRoot, 'reports');
-            const defaultOutputPath = path.join(reportsDir, `test-report-${Date.now()}.md`);
-            const outputPath = outputArg ? outputArg.split('=')[1] : defaultOutputPath;
+            const outputPath = outputArg ? outputArg.split('=')[1] : getDefaultReportPath();
             
             const results = await runner.runAllSuites();
             runner.generateMarkdownReport(results, outputPath);
             
-            console.log(`Report generated: ${outputPath}`);
+            console.log(`\n${COLORS.SUCCESS}Report generated:${COLORS.RESET} ${outputPath}`);
+            console.log(`${COLORS.SUCCESS}Archive folder:${COLORS.RESET} ${getArchiveFolderName()}`);
             exitCode = results.failed > 0 ? 1 : 0;
             break;
         }

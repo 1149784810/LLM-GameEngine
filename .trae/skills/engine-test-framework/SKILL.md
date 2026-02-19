@@ -54,8 +54,8 @@ execution:
       description: "测试框架CLI存在"
   postconditions:
     - type: "ARTIFACT_CREATED"
-      target: "reports/test-report-*.md"
-      description: "生成测试报告到项目根目录reports文件夹"
+      target: "reports/etf-v*-engine-v*-*/test-report-*.md"
+      description: "生成测试报告到归档文件夹"
     - type: "STATE_UPDATE"
       target: "test_framework.last_run"
       value: "timestamp"
@@ -64,10 +64,10 @@ execution:
     strategy: "checkpoint"
     rollback_point: "TEST_START"
     side_effects:
-      - "删除本次生成的测试报告"
+      - "删除本次生成的测试报告及归档文件夹"
     recovery_actions:
       - action: "DELETE_ARTIFACTS"
-        target: "reports/test-report-*.md"
+        target: "reports/etf-v*-engine-v*-*/"
 
 quality:
   acceptance_criteria:
@@ -313,8 +313,10 @@ tools/engine-test-framework/
     ├── mock-agent-factory.js    # Mock Agent工厂
     └── hallucination-injector.js # 幻觉注入器
 
-reports/                          # 测试报告输出目录（项目根目录）
-└── test-report-YYYYMMDD-HHMMSS.md  # 测试报告（带时间戳）
+reports/                                            # 测试报告输出目录（项目根目录）
+└── etf-v2.3.0-engine-v1.0.0-20260220/              # 归档文件夹格式
+    ├── test-report-1739876543210.md                # 测试报告（带时间戳）
+    └── test-report-1739876543210-summary.md        # 可选：摘要报告
 ```
 
 ---
@@ -342,8 +344,11 @@ node tools/engine-test-framework/cli.js suite --name=flow         # 流程验证
 node tools/engine-test-framework/cli.js suite --name=qa           # QA验证（qa-stage）⭐新增
 node tools/engine-test-framework/cli.js suite --name=all          # 运行所有测试套件 ⭐新增
 
-# 生成Markdown报告（输出到项目根目录reports文件夹）
-node tools/engine-test-framework/cli.js report --output=reports/test-report.md
+# 生成Markdown报告（自动输出到归档文件夹）
+node tools/engine-test-framework/cli.js report
+
+# 或指定自定义输出路径
+node tools/engine-test-framework/cli.js report --output=reports/custom-report.md
 
 # 详细输出模式
 node tools/engine-test-framework/cli.js test-all --verbose
@@ -768,3 +773,4 @@ Pass Rate:        100.0% ✅
 | v2.0.0 | 2026-02-20 | 新增Blockage/Parallel/Agent-Dispatch三大测试套件，支持流程验证 |
 | v2.1.0 | 2026-02-20 | 新增QA Stage测试套件，验证QA测试严格度、反幻觉机制、测试证据要求 |
 | v2.2.0 | 2026-02-20 | 测试报告输出路径改为项目根目录reports文件夹，便于统一管理测试文档 |
+| v2.3.0 | 2026-02-20 | 报告归档机制：自动创建etf-v{框架版本}-engine-v{引擎版本}-{日期}归档文件夹 |
