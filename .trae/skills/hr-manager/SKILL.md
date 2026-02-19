@@ -68,16 +68,24 @@ hr-manager (人员分配) ← 当前技能
 
 ### 💻 程序团队（Phase 2 使用）
 
-| 角色ID | 角色名称 | 对应智能体 | 主要职责 | 执行Stage/Step |
-|--------|----------|------------|----------|---------------|
-| PG-001 | **主程序员(LP)** | client-programmer-leader | 架构设计、框架搭建、代码审查 | Stage 2-1 / Stage 2-3 |
-| PG-002 | **技能系统程序(SkD)** | skill-systems-developer | 技能系统、Buff/Debuff机制 | Stage 2-2 (并行) |
-| PG-003 | **后端程序(BkD)** | serve-programmer-leader | 服务器、数据库、API | Stage 2-2 (并行) |
-| PG-004 | **技术美术(TA)** | technical-artist | 渲染特性、着色器、粒子特效 | Stage 2-2 (并行) |
-| PG-005 | **3C程序(3CP)** | game-3c-developer | 相机系统、角色控制器、移动系统 | Stage 2-2 (并行) |
-| PG-006 | **关卡程序(LvP)** | level-programmer | 关卡系统、关卡加载、场景管理 | Stage 2-2 (并行) |
-| PG-007 | **新手教程程序(TDP)** | tutorial-implementation-programmer | 引导系统、教程流程控制 | Stage 2-2 (并行) |
-| PG-008 | **音频程序(AP)** | audio-programmer | 音效系统、音乐播放 | Stage 2-2 (并行) |
+| 角色ID | 角色名称 | 对应智能体 | 主要职责 | 执行Stage/Step | 专业模块 | 禁止跨界 |
+|--------|----------|------------|----------|---------------|----------|----------|
+| PG-001 | **主程序员(LP)** | client-programmer-leader | 架构设计、框架搭建、代码审查、**任务拆分生成TodoList** | Stage 2-1 / Stage 2-3 | 技术架构、任务分配 | 禁止替代子程序员写具体功能 |
+| PG-002 | **技能系统程序(SkD)** | skill-systems-developer | 技能系统、Buff/Debuff机制、效果触发、战斗计算 | Stage 2-2 (并行) | **技能系统模块** | 禁止做UI、禁止做网络同步 |
+| PG-003 | **后端程序(BkD)** | serve-programmer-leader | 服务器架构、数据库、API接口、网络同步 | Stage 2-2 (并行) | **服务端系统模块** | 禁止做客户端渲染、禁止做UI |
+| PG-004 | **技术美术(TA)** | technical-artist | 着色器、粒子特效、材质、渲染优化 | Stage 2-2 (并行) | **渲染系统模块** | 禁止写游戏逻辑、禁止做UI交互 |
+| PG-005 | **3C程序(3CP)** | game-3c-developer | 相机系统、角色控制器、移动系统、手感调优 | Stage 2-2 (并行) | **3C系统模块** | 禁止做技能逻辑、禁止做网络 |
+| PG-006 | **关卡程序(LvP)** | level-programmer | 关卡加载、场景管理、关卡事件、编辑器 | Stage 2-2 (并行) | **关卡系统模块** | 禁止做战斗系统、禁止做UI |
+| PG-007 | **新手教程程序(TDP)** | tutorial-implementation-programmer | 新手引导、教程流程、强制引导逻辑 | Stage 2-2 (并行) | **引导系统模块** | 禁止做核心玩法、禁止做网络 |
+| PG-008 | **音频程序(AP)** | audio-programmer | 音效播放、音乐管理、音频混合 | Stage 2-2 (并行) | **音频系统模块** | 禁止做游戏逻辑、禁止做渲染 |
+
+> **专业模块说明**：参见 [fullstack-game-engine](.trae/skills/fullstack-game-engine/SKILL.md) 子程序员专业模块和任务分配规范
+> 
+> **任务分配流程**：
+> 1. 主程序员(LP) 读取 `docs/03-整合文档/` 下的 LD- 文档
+> 2. 主程序员(LP) 分析功能模块，匹配专业领域
+> 3. 主程序员(LP) 生成每个子程序员的 TodoList：`docs/04-技术文档/LP-TODOLIST-[标识]-[版本]-[日期].md`
+> 4. 子程序员只执行自己 TodoList 中的任务，禁止跨界
 
 ### 🔍 QA团队（Phase 3 使用）⭐重构
 
