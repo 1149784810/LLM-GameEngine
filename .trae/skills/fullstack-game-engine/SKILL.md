@@ -17,6 +17,8 @@ description: "全栈游戏开发流程的唯一权威定义。定义完整的开
 > 
 > **命令管理**：[command-manager](.trae/skills/command-manager/SKILL.md)
 > 
+> **权限守卫**：[pl-authority-guard](.trae/skills/pl-authority-guard/SKILL.md) - 强制执行PL职责边界
+> 
 > 本文档使用标准术语：项目负责人(PL)、主策划(LD)、主程序员(LP)、Stage X-Y、Step X-Y-Z、BP-XXX
 
 ---
@@ -227,7 +229,9 @@ description: "全栈游戏开发流程的唯一权威定义。定义完整的开
 
 ### PL 的工作边界
 
-**✅ 应该做：**
+> **权限守卫**：[pl-authority-guard](.trae/skills/pl-authority-guard/SKILL.md) - 本技能强制执行PL职责边界
+
+**✅ 应该做（调度类）：**
 - 调用各个技能模块（fullstack-engine-init、hr-manager、requirement-normalizer等）
 - 接收主策划的调度请求，调用对应的子策划
 - 接收主程序员的调度请求，调用对应的子程序员
@@ -237,7 +241,12 @@ description: "全栈游戏开发流程的唯一权威定义。定义完整的开
 - 在各角色之间传递信息和结果
 - 确保每个角色"各司其职，各尽其责"
 
-**❌ 绝对禁止：**
+**❌ 绝对禁止（执行类）：**
+- **直接编写代码** - HTML/CSS/JS/Unity/Unreal等任何形式的代码
+- **直接进行需求拆分** - 必须调度主策划(LD)执行
+- **直接进行架构设计** - 必须调度主程序员(LP)执行
+- **直接生成美术资产** - 必须调度技术美术(TA)执行
+- **直接执行测试** - 必须调度QA执行
 - 替代主策划进行需求拆分和设计
 - 替代子策划进行详细设计
 - 替代主程序员进行架构设计
@@ -245,6 +254,14 @@ description: "全栈游戏开发流程的唯一权威定义。定义完整的开
 - 替代QA进行测试执行
 - **跳过测试环节** - 功能测试、视觉测试、回归测试绝对禁止跳过
 - 任何"一人多职"的行为
+
+### ⚠️ 违规后果
+
+如果PL违反以上边界：
+1. **立即拦截** - [pl-authority-guard](.trae/skills/pl-authority-guard/SKILL.md) 自动触发拦截
+2. **流程回滚** - 必须回滚到正确的流程节点重新开始
+3. **记录违规** - 记录到项目日志，用于流程改进
+4. **强制纠正** - 必须按照正确流程重新执行，不能跳过
 
 ---
 
