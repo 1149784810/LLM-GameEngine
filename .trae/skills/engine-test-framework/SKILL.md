@@ -1,0 +1,558 @@
+---
+name: "engine-test-framework"
+version: "1.0.0"
+description: "引擎测试框架，快速验证全栈游戏开发引擎的全部流程和技能Header元数据，无需运行完整游戏开发周期。"
+author: "engine-team"
+created_at: "2026-02-20"
+updated_at: "2026-02-20"
+
+layer: 4
+dependencies:
+  - name: "terminology-standard"
+    layer: 0
+    type: "required"
+    purpose: "术语标准引用"
+  - name: "fullstack-game-engine"
+    layer: 1
+    type: "required"
+    purpose: "流程定义引用"
+  - name: "skill-development-guide"
+    layer: 1
+    type: "required"
+    purpose: "技能开发规范引用"
+
+contracts:
+  input:
+    required_documents:
+      - pattern: ".trae/skills/*/SKILL.md"
+        description: "待测试的技能文件"
+    optional_documents:
+      - pattern: "tools/engine-test-framework/config/*.yaml"
+        description: "测试场景配置文件"
+  output:
+    required_documents:
+      - pattern: "tools/engine-test-framework/reports/test-report-.*\\.md"
+        description: "测试报告"
+    validation_rules:
+      - type: "PASS_RATE"
+        threshold: 1.0
+        description: "所有测试必须通过"
+    quality_gates:
+      - metric: "header_compliance_rate"
+        threshold: 1.0
+        operator: "=="
+        required: true
+
+execution:
+  mode: "blocking"
+  preconditions:
+    - type: "ARTIFACT_EXISTS"
+      target: ".trae/skills/*/SKILL.md"
+      description: "至少存在一个技能文件"
+    - type: "ARTIFACT_EXISTS"
+      target: "tools/engine-test-framework/cli.js"
+      description: "测试框架CLI存在"
+  postconditions:
+    - type: "ARTIFACT_CREATED"
+      target: "tools/engine-test-framework/reports/test-report-*.md"
+      description: "生成测试报告"
+    - type: "STATE_UPDATE"
+      target: "test_framework.last_run"
+      value: "timestamp"
+  rollback:
+    supported: true
+    strategy: "checkpoint"
+    rollback_point: "TEST_START"
+    side_effects:
+      - "删除本次生成的测试报告"
+    recovery_actions:
+      - action: "DELETE_ARTIFACTS"
+        target: "tools/engine-test-framework/reports/test-report-*.md"
+
+quality:
+  acceptance_criteria:
+    - id: "AC-001"
+      description: "Header验证通过率"
+      metric: "header_pass_rate"
+      threshold: 1.0
+      operator: "=="
+      required: true
+    - id: "AC-002"
+      description: "依赖验证通过率"
+      metric: "dependency_pass_rate"
+      threshold: 1.0
+      operator: "=="
+      required: true
+    - id: "AC-003"
+      description: "函数签名验证通过率"
+      metric: "function_pass_rate"
+      threshold: 1.0
+      operator: "=="
+      required: true
+  testing:
+    required_tests:
+      - type: "FT"
+        description: "框架功能测试"
+        required: true
+      - type: "VT"
+        description: "验证规则测试"
+        required: true
+    evidence_required: true
+    anti_hallucination:
+      enabled: false
+      level: "LEVEL_1"
+  review:
+    required: false
+    reviewer: ""
+    checklist: []
+
+tracking:
+  execution_status:
+    current: "PENDING"
+    started_at: null
+    completed_at: null
+    duration_ms: null
+  error_codes:
+    - code: "E001"
+      name: "SKILL_NOT_FOUND"
+      severity: "HIGH"
+      rollback_required: false
+    - code: "E002"
+      name: "HEADER_VALIDATION_FAILED"
+      severity: "HIGH"
+      rollback_required: false
+    - code: "E003"
+      name: "CIRCULAR_DEPENDENCY"
+      severity: "CRITICAL"
+      rollback_required: true
+    - code: "E004"
+      name: "LAYER_VIOLATION"
+      severity: "HIGH"
+      rollback_required: false
+  checkpoints:
+    - id: "CP-001"
+      name: "技能扫描完成"
+      position: "after_scan"
+      rollback_supported: true
+    - id: "CP-002"
+      name: "测试套件执行完成"
+      position: "after_test"
+      rollback_supported: true
+    - id: "CP-003"
+      name: "报告生成完成"
+      position: "after_report"
+      rollback_supported: true
+
+functions:
+  main:
+    name: "test_all"
+    signature: "test_all(options: TEST_OPTIONS) -> TEST_RESULT"
+    description: "执行所有测试套件"
+  validators:
+    - name: "validate_header"
+      signature: "validate_header(skill: SKILL_DATA) -> VALIDATION_RESULT"
+      description: "验证技能Header元数据"
+    - name: "validate_dependency"
+      signature: "validate_dependency(skills: SKILL_MAP, graph: DEP_GRAPH) -> VALIDATION_RESULT"
+      description: "验证依赖关系"
+    - name: "validate_function"
+      signature: "validate_function(header: HEADER) -> VALIDATION_RESULT"
+      description: "验证函数签名"
+  state_managers:
+    - name: "save_checkpoint"
+      signature: "save_checkpoint(state: STATE) -> CHECKPOINT_ID"
+      description: "保存测试检查点"
+    - name: "rollback_to"
+      signature: "rollback_to(checkpoint_id: CHECKPOINT_ID) -> STATE"
+      description: "回滚到指定检查点"
+  queries:
+    - name: "get_test_results"
+      signature: "get_test_results() -> TEST_RESULT_MAP"
+      description: "获取测试结果"
+    - name: "get_skill_header"
+      signature: "get_skill_header(skill_name: STRING) -> HEADER"
+      description: "获取技能Header"
+    - name: "get_dependency_graph"
+      signature: "get_dependency_graph() -> DEP_GRAPH"
+      description: "获取依赖图"
+---
+
+# 引擎测试框架 (Engine Test Framework)
+
+> **术语引用**：[terminology-standard](.trae/skills/terminology-standard/SKILL.md)
+> 
+> **流程引用**：[fullstack-game-engine](.trae/skills/fullstack-game-engine/SKILL.md)
+> 
+> **技能规范**：[skill-development-guide](.trae/skills/skill-development-guide/SKILL.md)
+
+---
+
+## 功能概述
+
+本技能是全栈游戏开发引擎的测试框架，能够：
+
+1. **快速验证引擎流程** - 无需运行完整游戏开发周期
+2. **验证技能Header元数据** - 检查必填字段、Layer约束、版本格式
+3. **验证依赖关系** - 检测循环依赖、Layer层级违规
+4. **验证函数签名** - 检查主函数、验证器、状态管理器定义
+5. **模拟LLM环境** - Mock Agent工厂和幻觉注入器
+
+---
+
+## 调用时机
+
+**必须在以下场景调用：**
+
+1. 创建新技能后 - 验证Header完整性
+2. 更新现有技能时 - 验证变更不影响其他技能
+3. 定期引擎维护 - 确保所有技能符合规范
+4. CI/CD流程中 - 自动化测试验证
+5. 用户执行"启动测试框架"命令时
+
+---
+
+## 目录结构
+
+```
+tools/engine-test-framework/
+├── cli.js                       # 命令行入口
+├── package.json                 # 依赖配置 (js-yaml)
+├── README.md                    # 使用文档
+├── config/
+│   └── test-scenarios.yaml      # 测试场景配置
+├── core/
+│   ├── test-runner.js           # 测试运行器
+│   ├── base-test-suite.js       # 测试套件基类
+│   ├── header-validator.js      # Header验证器
+│   ├── dependency-validator.js  # 依赖验证器
+│   └── function-validator.js    # 函数验证器
+├── suites/
+│   ├── header-test-suite.js     # Header测试套件
+│   ├── dependency-test-suite.js # 依赖测试套件
+│   └── function-test-suite.js   # 函数测试套件
+├── mock/
+│   ├── mock-agent-factory.js    # Mock Agent工厂
+│   └── hallucination-injector.js # 幻觉注入器
+└── reports/
+    └── test-report.md           # 测试报告
+```
+
+---
+
+## 使用方法
+
+### 命令行接口
+
+```bash
+# 测试所有技能
+node tools/engine-test-framework/cli.js test-all
+
+# 测试单个技能
+node tools/engine-test-framework/cli.js test --skill=<skill-name>
+
+# 运行特定测试套件
+node tools/engine-test-framework/cli.js suite --name=header
+node tools/engine-test-framework/cli.js suite --name=dependency
+node tools/engine-test-framework/cli.js suite --name=function
+
+# 生成Markdown报告
+node tools/engine-test-framework/cli.js report --output=reports/test-report.md
+
+# 详细输出模式
+node tools/engine-test-framework/cli.js test-all --verbose
+
+# JSON输出（用于管道处理）
+node tools/engine-test-framework/cli.js test-all --json
+```
+
+### 技能调用方式
+
+```
+WHEN 用户执行"启动测试框架"命令:
+    1. 调用 engine-test-framework 技能
+    2. 执行 test_all() 主函数
+    3. 运行所有测试套件
+    4. 生成测试报告
+    5. 返回测试结果
+```
+
+---
+
+## 测试套件说明
+
+### 1. Header测试套件
+
+验证技能Header元数据的完整性和正确性：
+
+| 测试项 | 说明 | 严重级别 |
+|--------|------|----------|
+| REQUIRED_FIELDS | name, version, description, layer, dependencies | ERROR |
+| LAYER_CONSTRAINT | Layer 必须是 0-4 | ERROR |
+| VERSION_FORMAT | 格式: v1.0.0 或 1.0.0 | WARNING |
+| DESCRIPTION_LENGTH | 限制 200 字符 | WARNING |
+| NAME_MATCH | header.name == 目录名 | WARNING |
+| DEPENDENCIES_FORMAT | 数组格式，每项有 name/layer/type | WARNING |
+| CONTRACTS_FORMAT | input/output 契约存在 | ERROR |
+| EXECUTION_FORMAT | mode/rollback 配置 | WARNING |
+| TRACKING_FORMAT | execution_status/error_codes | WARNING |
+| QUALITY_FORMAT | acceptance_criteria/anti_hallucination | WARNING |
+| FUNCTIONS_FORMAT | main/validators/queries 定义 | WARNING |
+
+### 2. Dependency测试套件
+
+验证技能依赖关系的正确性：
+
+| 测试项 | 说明 | 严重级别 |
+|--------|------|----------|
+| CIRCULAR_DEPENDENCY | DFS 检测循环依赖 | CRITICAL |
+| LAYER_VIOLATION | 高层级不能依赖低层级 | ERROR |
+| DEPENDENCY_EXISTS | 依赖的技能必须存在 | ERROR |
+| DEPENDENCY_TYPE | required/optional/conditional | WARNING |
+
+### 3. Function测试套件
+
+验证技能函数签名的正确性：
+
+| 测试项 | 说明 | 严重级别 |
+|--------|------|----------|
+| MAIN_FUNCTION | name/signature/description | ERROR |
+| VALIDATORS | 验证器函数签名 | WARNING |
+| STATE_MANAGERS | 状态管理器函数签名 | WARNING |
+| QUERIES | 查询函数签名 | WARNING |
+
+---
+
+## 验证规则详解
+
+### Header验证流程
+
+```
+FUNCTION validate_header(skill_data) -> VALIDATION_RESULT:
+    errors = []
+    warnings = []
+    
+    // 1. 必填字段检查
+    for field in [name, version, description, layer, dependencies]:
+        if skill_data.header[field] is undefined:
+            errors.append(REQUIRED_FIELD_MISSING, field)
+    
+    // 2. Layer约束检查
+    if skill_data.header.layer not in [0, 1, 2, 3, 4]:
+        errors.append(INVALID_LAYER, skill_data.header.layer)
+    
+    // 3. 版本格式检查
+    if not match(skill_data.header.version, /^v?\d+\.\d+(\.\d+)?$/):
+        warnings.append(INVALID_VERSION_FORMAT)
+    
+    // 4. 描述长度检查
+    if skill_data.header.description.length > 200:
+        warnings.append(DESCRIPTION_TOO_LONG)
+    
+    // 5. 名称匹配检查
+    if skill_data.header.name != skill_data.directory_name:
+        warnings.append(NAME_MISMATCH)
+    
+    // 6. 契约完整性检查
+    if not skill_data.header.contracts.input:
+        errors.append(INPUT_CONTRACT_MISSING)
+    if not skill_data.header.contracts.output:
+        errors.append(OUTPUT_CONTRACT_MISSING)
+    
+    return {
+        valid: errors.length == 0,
+        errors: errors,
+        warnings: warnings
+    }
+```
+
+### 依赖验证流程
+
+```
+FUNCTION validate_dependency(skills, dependency_graph) -> VALIDATION_RESULT:
+    errors = []
+    
+    // 1. 循环依赖检测 (DFS)
+    for skill_name in skills:
+        cycle = detect_cycle_dfs(skill_name, dependency_graph)
+        if cycle:
+            errors.append(CIRCULAR_DEPENDENCY, cycle)
+    
+    // 2. Layer层级违规检测
+    for skill_name, skill_data in skills:
+        for dep in skill_data.header.dependencies:
+            if dep.layer > skill_data.header.layer:
+                errors.append(LAYER_VIOLATION, {
+                    skill: skill_name,
+                    skill_layer: skill_data.header.layer,
+                    dependency: dep.name,
+                    dependency_layer: dep.layer
+                })
+    
+    // 3. 依赖存在性检查
+    for skill_name, skill_data in skills:
+        for dep in skill_data.header.dependencies:
+            if dep.name not in skills:
+                errors.append(DEPENDENCY_NOT_FOUND, dep.name)
+    
+    return {
+        valid: errors.length == 0,
+        errors: errors
+    }
+```
+
+---
+
+## Mock Agent模拟
+
+用于模拟真实LLM环境的Agent行为：
+
+### Agent类型
+
+| 类型 | 角色 | 输出类型 |
+|------|------|---------|
+| designer | 策划 | markdown |
+| programmer | 程序 | code |
+| qa | 测试 | report |
+| pl | 项目负责人 | plan |
+
+### 幻觉注入模式
+
+| 模式 | 说明 | 默认概率 |
+|------|------|---------|
+| PERFECT_PASS_RATE | 100%通过率幻觉 | 15% |
+| INSUFFICIENT_EVIDENCE | 证据不足 | 20% |
+| MISSING_SCREENSHOTS | 截图缺失 | 10% |
+| CODE_INFERENCE | 仅凭代码推断 | 25% |
+| TEMPLATE_COPY | 模板复制粘贴 | 10% |
+| FABRICATED_DATA | 虚构数据 | 15% |
+| CONTEXT_COMPRESSION | 上下文压缩信息丢失 | 20% |
+
+### 使用示例
+
+```javascript
+const { MockAgentFactory } = require('./mock/mock-agent-factory');
+
+const factory = new MockAgentFactory({
+    enableHallucination: true,
+    hallucinationIntensity: 'medium'
+});
+
+const designer = factory.createAgent('designer', { id: 'designer-1' });
+const result = await designer.execute({
+    moduleName: 'Combat System',
+    description: '战斗系统设计'
+});
+```
+
+---
+
+## 与其他技能的关系
+
+### 被以下技能调用
+
+- `fullstack-engine-init` - 引擎初始化时验证技能完整性
+- `skill-optimizer` - 技能优化后验证变更
+- `skill-development-guide` - 新技能创建后验证
+
+### 调用以下技能
+
+- `terminology-standard` - 获取术语定义
+- `state-manager` - 保存测试状态和检查点
+- `event-bus` - 发布测试完成事件
+
+---
+
+## 输出格式
+
+### 控制台输出
+
+```
+═══════════════════════════════════════════════════════════════
+  Engine Test Framework v2.0
+═══════════════════════════════════════════════════════════════
+
+[1/3] Scanning skill files...
+  Found: contract-validator (Layer: 2, Deps: 3)
+  ...
+  Scan complete: 25 skills found
+
+[2/3] Running test suites...
+  Running suite: header...
+    header: 275/275 passed
+  Running suite: dependency...
+    dependency: 4/4 passed
+  Running suite: function...
+    function: 100/100 passed
+
+[3/3] Generating report...
+
+═══════════════════════════════════════════════════════════════
+  Test Summary
+═══════════════════════════════════════════════════════════════
+
+Total Skills:     25
+Duration:         0.03s
+Passed:           379
+Failed:           0
+Warnings:         0
+
+Pass Rate:        100.0% ✅
+```
+
+### Markdown报告
+
+```markdown
+# Engine Test Framework Report
+
+## Summary
+
+| Metric | Value |
+|--------|-------|
+| Total Skills | 25 |
+| Duration | 0.03s |
+| Passed | 379 |
+| Failed | 0 |
+| Pass Rate | 100.0% |
+
+## Suite Results
+
+| Suite | Passed | Failed |
+|-------|--------|--------|
+| header | 275 | 0 |
+| dependency | 4 | 0 |
+| function | 100 | 0 |
+
+## Failed Tests
+
+[如有失败，列出详细信息]
+```
+
+---
+
+## 错误处理
+
+### 错误码映射
+
+| 错误码 | 名称 | 严重程度 | 处理方式 |
+|--------|------|----------|---------|
+| E001 | SKILL_NOT_FOUND | HIGH | 返回技能不存在错误 |
+| E002 | HEADER_VALIDATION_FAILED | HIGH | 列出具体验证失败项 |
+| E003 | CIRCULAR_DEPENDENCY | CRITICAL | 触发回滚，阻止流程 |
+| E004 | LAYER_VIOLATION | HIGH | 列出层级违规详情 |
+
+### 回滚策略
+
+当检测到CRITICAL级别错误时：
+
+1. 保存当前测试状态到检查点
+2. 停止后续测试执行
+3. 生成部分测试报告
+4. 返回错误详情给调用者
+
+---
+
+## 版本历史
+
+| 版本 | 日期 | 变更内容 |
+|------|------|---------|
+| v1.0.0 | 2026-02-20 | 初始版本，包含Header/Dependency/Function三大测试套件 |
