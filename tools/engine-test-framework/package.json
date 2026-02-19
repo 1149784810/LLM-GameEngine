@@ -1,0 +1,16 @@
+{
+  "name": "engine-test-framework",
+  "version": "1.0.0",
+  "description": "本测试框架专为全栈游戏开发引擎设计，能够快速测试引擎的全部流程，模拟真实的LLM生成环境，验证引擎中任何模块或技能的问题和不足。",
+  "main": "cli.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "js-yaml": "^4.1.1"
+  }
+}

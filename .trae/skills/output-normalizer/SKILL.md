@@ -90,7 +90,19 @@ projects/
     │   ├── 关卡策划/
     │   └── ...
     ├── src/                 # 源代码
-    ├── assets/              # 资源文件
+    ├── assets/              # 资源文件 ⭐资产本地化存储
+    │   ├── images/          # 图片资源
+    │   │   ├── characters/  # 角色立绘
+    │   │   ├── icons/       # 图标
+    │   │   ├── backgrounds/ # 背景图
+    │   │   ├── effects/     # 特效
+    │   │   └── ui/          # UI元素
+    │   ├── audio/           # 音频资源
+    │   │   ├── bgm/         # 背景音乐
+    │   │   ├── sfx/         # 音效
+    │   │   └── voice/       # 语音
+    │   └── generated/       # AI生成资产记录
+    │       └── asset-manifest.json
     ├── tests/               # 测试文件
     └── index.html          # 入口文件
 ```
@@ -361,6 +373,10 @@ tools/部署/web_deploy.py
 
 6. **项目名称规范**: 项目名称应该简洁明了，使用英文或拼音，避免特殊字符
 
+7. **⭐资产本地化存储**: AI生成的资产（图片、音频）必须下载到项目的 `assets/` 目录，禁止在代码中使用远程URL链接
+
+8. **⭐资产路径规范**: 资产文件使用相对于项目根目录的路径，如 `./assets/images/characters/hero.png`
+
 ## 快速参考表
 
 | 场景 | 推荐目录 | 示例路径 |
@@ -373,6 +389,9 @@ tools/部署/web_deploy.py
 | 开发草稿 | `temp/` | `temp/draft_algorithm.js` |
 | 部署工具 | `tools/部署/` | `tools/部署/deploy.sh` |
 | 实用脚本 | `tools/` | `tools/cleanup_logs.py` |
+| **⭐AI生成图片** | `projects/[项目]/assets/images/` | `projects/游戏/assets/images/characters/hero.png` |
+| **⭐AI生成音频** | `projects/[项目]/assets/audio/` | `projects/游戏/assets/audio/sfx/jump.mp3` |
+| **⭐资产清单** | `projects/[项目]/assets/generated/` | `projects/游戏/assets/generated/asset-manifest.json` |
 
 ## 错误示例
 
@@ -383,3 +402,5 @@ tools/部署/web_deploy.py
 | `projects/测试脚本.py` | 测试脚本放在项目根目录 | `temp/test_script.py` |
 | `output/长期工具.py` | 长期工具放在临时输出目录 | `tools/utility_script.py` |
 | `tools/临时测试.py` | 临时文件放在工具目录 | `temp/test_2026-02-19.py` |
+| **⭐`"https://ai.com/image.png"`** | **代码中直接使用远程URL** | **`"./assets/images/hero.png"`** |
+| **⭐`assets/hero.png`** | **资产未分类存放** | **`assets/images/characters/hero.png`** |

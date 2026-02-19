@@ -1,0 +1,83 @@
+{
+  "name": "action-fast",
+  "displayName": "动作游戏快速流程",
+  "description": "适用于动作类游戏的快速开发流程，强调3C系统和战斗系统的迭代优化",
+  "projectType": "action",
+  "complexity": "medium",
+  "estimatedTeamSize": {
+    "min": 5,
+    "max": 10
+  },
+  "phases": {
+    "phase0": {
+      "enabled": true,
+      "duration": "0.5天",
+      "deliverables": ["PROJECT-INFO", "FLOW-STATUS", "TEAM-ALLOCATION"]
+    },
+    "phase1": {
+      "enabled": true,
+      "duration": "2-3天",
+      "parallelExecution": true,
+      "roles": ["LD", "SD-1", "SD-2"],
+      "focusAreas": ["3C系统", "战斗系统", "关卡设计"],
+      "deliverables": ["LD-REQ-SPLIT", "SD-3C", "SD-COMBAT", "SD-LEVEL"]
+    },
+    "phase2": {
+      "enabled": true,
+      "duration": "5-10天",
+      "parallelExecution": true,
+      "maxSystemsPerPerson": 2,
+      "priorityOrder": ["3C系统", "战斗系统", "关卡"],
+      "deliverables": ["LP-ARCH", "LP-SPEC-3C", "LP-SPEC-COMBAT", "CODE-IMPLEMENTATION"]
+    },
+    "phase3": {
+      "enabled": true,
+      "duration": "2-3天",
+      "testTypes": ["FT", "VT", "FPT"],
+      "focusTests": ["手感测试", "帧率测试", "打击感测试"],
+      "deliverables": ["QA-TEST-REPORT", "VT-SCREENSHOTS", "FEEL-TEST-REPORT"]
+    },
+    "phase4": {
+      "enabled": true,
+      "duration": "1天",
+      "deliverables": ["FINAL-DELIVERY"]
+    },
+    "phase8": {
+      "enabled": true,
+      "autoTrigger": true,
+      "deliverables": ["EXPERIENCE-SUMMARY"]
+    }
+  },
+  "blockingPoints": {
+    "BP-001": { "required": true, "description": "项目初始化完成" },
+    "BP-002": { "required": true, "description": "需求拆分完成" },
+    "BP-003": { "required": true, "description": "3C系统原型通过" },
+    "BP-004": { "required": true, "description": "战斗系统实现完成" },
+    "BP-005": { "required": true, "description": "功能测试通过" },
+    "BP-006": { "required": true, "description": "手感测试通过" },
+    "BP-007": { "required": true, "description": "性能测试通过" },
+    "BP-008": { "required": true, "description": "最终交付完成" }
+  },
+  "qualityGates": {
+    "codeReview": true,
+    "testCoverage": {
+      "minimum": 70,
+      "unit": 60,
+      "integration": 50
+    },
+    "performanceTest": true,
+    "securityAudit": false,
+    "feelTest": true
+  },
+  "riskMitigation": {
+    "earlyPrototyping": true,
+    "iterativeDelivery": true,
+    "continuousIntegration": true,
+    "feelIteration": true
+  },
+  "specialRequirements": {
+    "3CIteration": "3C系统需要至少3次迭代优化",
+    "combatFeel": "战斗系统需要手感调优",
+    "frameRate": "目标帧率60fps"
+  }
+}

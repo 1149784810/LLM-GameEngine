@@ -1,7 +1,7 @@
 ---
 name: "skill-optimizer"
-version: "2.0.0"
-description: "Analyzes and optimizes skill definitions to eliminate redundancy and conflicts. Guides new skill creation with proper header metadata. Auto-updates test framework to cover new engine modules and processes. Invoke when creating new skills, updating existing skills, or when detecting overlapping functionality between skills."
+version: "2.1.0"
+description: "分析和优化技能定义，消除冗余和冲突。指导新技能创建时拥有正确的Header元数据。自动更新测试框架覆盖新引擎模块。"
 author: "engine-team"
 created_at: "2024-02-19"
 updated_at: "2026-02-20"
@@ -16,14 +16,6 @@ dependencies:
     layer: 1
     type: "required"
     purpose: "技能开发规范"
-  - name: "skill-header-spec"
-    layer: 0
-    type: "required"
-    purpose: "技能头部元数据规范"
-  - name: "skill-validator-cli"
-    layer: 4
-    type: "required"
-    purpose: "技能验证工具"
 
 contracts:
   input:

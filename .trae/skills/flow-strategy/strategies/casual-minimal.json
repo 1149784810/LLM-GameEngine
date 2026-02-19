@@ -1,0 +1,75 @@
+{
+  "name": "casual-minimal",
+  "displayName": "休闲游戏精简流程",
+  "description": "适用于小型休闲游戏的精简开发流程，快速迭代，最小化文档要求",
+  "projectType": "casual",
+  "complexity": "low",
+  "estimatedTeamSize": {
+    "min": 3,
+    "max": 6
+  },
+  "phases": {
+    "phase0": {
+      "enabled": true,
+      "duration": "0.5天",
+      "deliverables": ["PROJECT-INFO", "TEAM-ALLOCATION"]
+    },
+    "phase1": {
+      "enabled": true,
+      "duration": "1-2天",
+      "parallelExecution": false,
+      "roles": ["LD"],
+      "deliverables": ["LD-REQ-SPLIT"]
+    },
+    "phase2": {
+      "enabled": true,
+      "duration": "3-5天",
+      "parallelExecution": false,
+      "maxSystemsPerPerson": 3,
+      "deliverables": ["LP-ARCH", "CODE-IMPLEMENTATION"]
+    },
+    "phase3": {
+      "enabled": true,
+      "duration": "1-2天",
+      "testTypes": ["FT", "VT"],
+      "deliverables": ["QA-TEST-REPORT"]
+    },
+    "phase4": {
+      "enabled": true,
+      "duration": "0.5天",
+      "deliverables": ["FINAL-DELIVERY"]
+    },
+    "phase8": {
+      "enabled": false,
+      "autoTrigger": false,
+      "deliverables": []
+    }
+  },
+  "blockingPoints": {
+    "BP-001": { "required": true, "description": "项目初始化完成" },
+    "BP-002": { "required": true, "description": "需求确认" },
+    "BP-003": { "required": false, "description": "技术方案评审（可选）" },
+    "BP-004": { "required": true, "description": "核心功能完成" },
+    "BP-005": { "required": true, "description": "功能测试通过" },
+    "BP-006": { "required": true, "description": "视觉测试通过" },
+    "BP-007": { "required": false, "description": "回归测试（可选）" },
+    "BP-008": { "required": true, "description": "交付完成" }
+  },
+  "qualityGates": {
+    "codeReview": false,
+    "testCoverage": {
+      "minimum": 50,
+      "unit": 40,
+      "integration": 30
+    },
+    "performanceTest": false,
+    "securityAudit": false
+  },
+  "riskMitigation": {
+    "earlyPrototyping": true,
+    "iterativeDelivery": true,
+    "continuousIntegration": false
+  },
+  "simplifiedDocs": true,
+  "skipOptionalPhases": true
+}

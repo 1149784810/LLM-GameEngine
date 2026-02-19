@@ -187,7 +187,10 @@ async function main() {
         
         case 'report': {
             const outputArg = args.find(a => a.startsWith('--output='));
-            const outputPath = outputArg ? outputArg.split('=')[1] : path.join(__dirname, 'reports', `test-report-${Date.now()}.md`);
+            const projectRoot = path.resolve(__dirname, '..', '..');
+            const reportsDir = path.join(projectRoot, 'reports');
+            const defaultOutputPath = path.join(reportsDir, `test-report-${Date.now()}.md`);
+            const outputPath = outputArg ? outputArg.split('=')[1] : defaultOutputPath;
             
             const results = await runner.runAllSuites();
             runner.generateMarkdownReport(results, outputPath);

@@ -18,7 +18,7 @@ const fs = require('fs');
 const path = require('path');
 const { SkillHeaderParser } = require('./skill-header-parser');
 
-const SKILLS_DIR = path.join(__dirname, '..', '.trae', 'skills');
+const SKILLS_DIR = path.join(__dirname, '..', '..', '.trae', 'skills');
 
 class SkillExecutionValidator {
     

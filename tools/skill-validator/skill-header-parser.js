@@ -17,7 +17,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const SKILLS_DIR = path.join(__dirname, '..', '.trae', 'skills');
+const SKILLS_DIR = path.join(__dirname, '..', '..', '.trae', 'skills');
 
 const REQUIRED_FIELDS = [
     'name',

@@ -1,7 +1,7 @@
 ---
 name: "project-experience-summarizer"
-version: "1.0.0"
-description: "Summarizes project development experience and lessons learned after fullstack development completion. Invoke when fullstack-game-engine finishes execution to collect bug feedback, solve issues, and document solutions for future reference."
+version: "1.1.0"
+description: "项目经验总结器，在全栈开发完成后收集Bug反馈、解决问题并记录解决方案。"
 author: "engine-team"
 created_at: "2024-02-19"
 updated_at: "2026-02-20"

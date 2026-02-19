@@ -1,0 +1,75 @@
+# Test Scenarios Configuration
+# 测试场景配置
+
+scenarios:
+  # 基础验证场景
+  - name: "basic_validation"
+    description: "基础验证场景 - 验证所有技能的基本结构"
+    suites:
+      - header
+      - dependency
+      - function
+    timeout: 60
+
+  # 完整验证场景
+  - name: "full_validation"
+    description: "完整验证场景 - 验证所有测试套件"
+    suites:
+      - header
+      - dependency
+      - function
+      - contract
+      - execution
+      - quality
+    timeout: 120
+
+  # 依赖检查场景
+  - name: "dependency_check"
+    description: "依赖检查场景 - 专注于依赖关系验证"
+    suites:
+      - dependency
+    timeout: 30
+
+  # 快速检查场景
+  - name: "quick_check"
+    description: "快速检查场景 - 仅验证关键项"
+    suites:
+      - header
+    timeout: 15
+
+# 测试目标配置
+targets:
+  # 最小测试项目
+  minimal_clicker:
+    name: "Minimal Clicker"
+    type: "clicker"
+    features:
+      - click_system
+      - coin_system
+      - shop_system
+    expected_duration: "5min"
+    
+  # 中型测试项目
+  medium_rpg:
+    name: "Medium RPG"
+    type: "rpg"
+    features:
+      - combat_system
+      - skill_system
+      - inventory_system
+      - quest_system
+    expected_duration: "30min"
+
+# 验证级别
+validation_levels:
+  strict:
+    fail_on_warning: true
+    require_all_suites: true
+    
+  normal:
+    fail_on_warning: false
+    require_all_suites: true
+    
+  loose:
+    fail_on_warning: false
+    require_all_suites: false

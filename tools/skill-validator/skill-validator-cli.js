@@ -26,7 +26,7 @@ const { SkillExecutionValidator } = require('./skill-execution-validator');
 const { SkillRollbackDecider } = require('./skill-rollback-decider');
 const { SkillQualityValidator } = require('./skill-quality-validator');
 
-const SKILLS_DIR = path.join(__dirname, '..', '.trae', 'skills');
+const SKILLS_DIR = path.join(__dirname, '..', '..', '.trae', 'skills');
 
 const COLORS = {
     info: '\x1b[36m',

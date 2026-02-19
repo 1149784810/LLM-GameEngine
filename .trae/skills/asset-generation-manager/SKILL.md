@@ -302,6 +302,180 @@ function generateSkillIcon(type, color) {
 
 ---
 
+## 资产本地化存储规范 ⭐强制执行
+
+### 核心原则
+
+**⚠️ 强制要求**：所有AI生成的资产必须先下载到本地项目目录，再使用本地相对路径配置。
+
+**禁止行为**：
+- ❌ 直接在代码中使用AI生成资产的远程URL链接
+- ❌ 使用临时链接或有时效性的URL
+- ❌ 依赖外部服务的资产链接
+
+**正确做法**：
+- ✅ 生成资产后立即下载到本地
+- ✅ 使用项目相对路径引用资产
+- ✅ 确保资产随项目一起分发
+
+### 资产存储目录结构
+
+```
+projects/[项目名]/
+├── assets/
+│   ├── images/
+│   │   ├── characters/       # 角色立绘
+│   │   ├── icons/            # 技能图标、道具图标
+│   │   ├── backgrounds/      # 背景图
+│   │   ├── effects/          # 特效贴图
+│   │   └── ui/               # UI元素
+│   ├── audio/
+│   │   ├── bgm/              # 背景音乐
+│   │   ├── sfx/              # 音效
+│   │   └── voice/            # 语音
+│   └── generated/            # AI生成资产记录
+│       └── asset-manifest.json
+```
+
+### 资产下载流程
+
+```
+AI生成资产（图片/音频）
+    ↓
+获取生成结果（URL或Base64）
+    ↓
+【强制】下载到本地项目目录
+    ├─→ 图片：保存为 PNG/JPG 格式
+    └─→ 音频：保存为 MP3/WAV/OGG 格式
+    ↓
+生成资产清单记录
+    ├── 原始URL（仅记录）
+    ├── 本地路径（实际使用）
+    ├── 生成参数
+    └── 时间戳
+    ↓
+在代码中使用本地相对路径
+    ↓
+验证资产可访问性
+```
+
+### 资产下载实现
+
+#### 图片资产下载
+
+```javascript
+// 下载AI生成的图片到本地
+async function downloadImageToLocal(imageUrl, localPath) {
+  // 1. 获取图片数据
+  const response = await fetch(imageUrl);
+  const blob = await response.blob();
+  
+  // 2. 转换为Base64或直接保存
+  const arrayBuffer = await blob.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+  
+  // 3. 保存到本地
+  // 使用 Node.js fs 或浏览器下载API
+  await fs.writeFile(localPath, buffer);
+  
+  return localPath;
+}
+```
+
+#### 音频资产下载
+
+```javascript
+// 下载AI生成的音频到本地
+async function downloadAudioToLocal(audioUrl, localPath) {
+  const response = await fetch(audioUrl);
+  const arrayBuffer = await response.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+  
+  await fs.writeFile(localPath, buffer);
+  return localPath;
+}
+```
+
+### 资产清单格式
+
+**asset-manifest.json**：
+```json
+{
+  "version": "1.0",
+  "generated_at": "2026-02-20T10:30:00Z",
+  "assets": [
+    {
+      "id": "char-001",
+      "name": "warrior-idle",
+      "type": "image",
+      "category": "characters",
+      "local_path": "assets/images/characters/warrior-idle.png",
+      "original_url": "https://ai-service.com/generated/xxx.png",
+      "generated_by": "LiblibAI",
+      "prompt": "warrior character, idle pose, fantasy style...",
+      "size": { "width": 512, "height": 768 },
+      "file_size": "256KB",
+      "created_at": "2026-02-20T10:30:00Z"
+    },
+    {
+      "id": "sfx-001",
+      "name": "fireball-cast",
+      "type": "audio",
+      "category": "sfx",
+      "local_path": "assets/audio/sfx/fireball-cast.mp3",
+      "original_url": "https://ai-service.com/generated/xxx.mp3",
+      "generated_by": "AudioGenerator",
+      "prompt": "fireball casting sound effect",
+      "duration": "1.5s",
+      "created_at": "2026-02-20T10:35:00Z"
+    }
+  ]
+}
+```
+
+### 代码中使用规范
+
+**❌ 错误示例**：
+```javascript
+// 禁止：直接使用远程URL
+const characterImage = "https://ai-service.com/generated/abc123.png";
+const skillIcon = "https://temp-link.com/image.png";
+```
+
+**✅ 正确示例**：
+```javascript
+// 正确：使用本地相对路径
+const characterImage = "./assets/images/characters/warrior-idle.png";
+const skillIcon = "./assets/images/icons/fireball.png";
+
+// 或使用配置文件
+const ASSETS = {
+  characters: {
+    warrior: "./assets/images/characters/warrior-idle.png"
+  },
+  icons: {
+    fireball: "./assets/images/icons/fireball.png"
+  }
+};
+```
+
+### 资产验证检查
+
+在资产下载完成后，必须进行以下验证：
+
+```markdown
+## 资产验证清单
+
+- [ ] 文件已成功保存到本地目录
+- [ ] 文件格式正确（PNG/JPG/MP3/WAV）
+- [ ] 文件大小合理（非空文件）
+- [ ] 文件可正常打开/播放
+- [ ] 相对路径引用正确
+- [ ] asset-manifest.json 已更新
+```
+
+---
+
 ## 质量检查标准
 
 ### 检查清单
@@ -312,6 +486,9 @@ function generateSkillIcon(type, color) {
 - [ ] 视觉风格统一
 - [ ] 无明显的生成瑕疵
 - [ ] 符合项目风格指南
+- [ ] **已下载到本地目录** ⭐新增
+- [ ] **使用本地相对路径** ⭐新增
+- [ ] **asset-manifest.json已更新** ⭐新增
 
 ### 问题处理
 

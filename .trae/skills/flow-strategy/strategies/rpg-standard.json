@@ -1,0 +1,73 @@
+{
+  "name": "rpg-standard",
+  "displayName": "RPG标准流程",
+  "description": "适用于中大型RPG游戏的标准开发流程，包含完整的角色成长、战斗系统、任务系统等模块",
+  "projectType": "rpg",
+  "complexity": "high",
+  "estimatedTeamSize": {
+    "min": 8,
+    "max": 15
+  },
+  "phases": {
+    "phase0": {
+      "enabled": true,
+      "duration": "1-2天",
+      "deliverables": ["PROJECT-INFO", "FLOW-STATUS", "TEAM-ALLOCATION"]
+    },
+    "phase1": {
+      "enabled": true,
+      "duration": "3-5天",
+      "parallelExecution": true,
+      "roles": ["LD", "SD-1", "SD-2", "SD-3", "BD"],
+      "deliverables": ["LD-REQ-SPLIT", "SD-GAMEPLAY", "SD-SYSTEM", "SD-LEVEL", "BD-NUMERICS"]
+    },
+    "phase2": {
+      "enabled": true,
+      "duration": "7-14天",
+      "parallelExecution": true,
+      "maxSystemsPerPerson": 2,
+      "deliverables": ["LP-ARCH", "LP-SPEC-[SYSTEM]", "CODE-IMPLEMENTATION"]
+    },
+    "phase3": {
+      "enabled": true,
+      "duration": "3-5天",
+      "testTypes": ["FT", "VT", "FPT", "RT"],
+      "deliverables": ["QA-TEST-REPORT", "VT-SCREENSHOTS"]
+    },
+    "phase4": {
+      "enabled": true,
+      "duration": "1-2天",
+      "deliverables": ["FINAL-DELIVERY"]
+    },
+    "phase8": {
+      "enabled": true,
+      "autoTrigger": true,
+      "deliverables": ["EXPERIENCE-SUMMARY"]
+    }
+  },
+  "blockingPoints": {
+    "BP-001": { "required": true, "description": "项目初始化完成" },
+    "BP-002": { "required": true, "description": "需求拆分完成" },
+    "BP-003": { "required": true, "description": "技术方案评审通过" },
+    "BP-004": { "required": true, "description": "核心系统实现完成" },
+    "BP-005": { "required": true, "description": "功能测试通过" },
+    "BP-006": { "required": true, "description": "视觉测试通过" },
+    "BP-007": { "required": true, "description": "回归测试通过" },
+    "BP-008": { "required": true, "description": "最终交付完成" }
+  },
+  "qualityGates": {
+    "codeReview": true,
+    "testCoverage": {
+      "minimum": 80,
+      "unit": 70,
+      "integration": 60
+    },
+    "performanceTest": true,
+    "securityAudit": false
+  },
+  "riskMitigation": {
+    "earlyPrototyping": true,
+    "iterativeDelivery": true,
+    "continuousIntegration": true
+  }
+}
