@@ -84,7 +84,7 @@ quality:
       operator: "=="
       required: true
     - id: "AC-003"
-      description: "完整路径测试通过"
+      description: "完整路径测试完成"
       metric: "fpt_pass_rate"
       threshold: 1.0
       operator: "=="
@@ -94,6 +94,18 @@ quality:
       metric: "p0_bug_count"
       threshold: 0
       operator: "=="
+      required: true
+    - id: "AC-005"
+      description: "反幻觉自检签署"
+      metric: "anti_hallucination_signed"
+      threshold: true
+      operator: "=="
+      required: true
+    - id: "AC-006"
+      description: "测试证据完整"
+      metric: "evidence_coverage"
+      threshold: 1.0
+      operator: ">="
       required: true
   testing:
     required_tests:
@@ -115,6 +127,36 @@ quality:
       level: "LEVEL_2"
       min_screenshots: 5
       max_pass_rate: 0.95
+    regression_requirements:
+      - id: "RR-001"
+        description: "修复后执行回归测试"
+        trigger: "bug_fixed"
+        required: true
+      - id: "RR-002"
+        description: "覆盖所有测试用例"
+        scope: "all_test_cases"
+        required: true
+      - id: "RR-003"
+        description: "验证修复的问题已解决"
+        verification: "fixed_issue_verified"
+        required: true
+      - id: "RR-004"
+        description: "确认未引入新问题"
+        verification: "no_new_issues"
+        required: true
+    prohibited_behaviors:
+      - id: "PB-001"
+        description: "禁止仅凭代码推断功能正常"
+        severity: "CRITICAL"
+      - id: "PB-002"
+        description: "禁止复制粘贴测试结果"
+        severity: "CRITICAL"
+      - id: "PB-003"
+        description: "禁止虚构测试数据"
+        severity: "CRITICAL"
+      - id: "PB-004"
+        description: "禁止报告100%通过而无证据"
+        severity: "HIGH"
   review:
     required: true
     reviewer: "LD"

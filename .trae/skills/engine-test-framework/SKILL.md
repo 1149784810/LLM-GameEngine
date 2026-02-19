@@ -1,7 +1,7 @@
 ---
 name: "engine-test-framework"
-version: "2.2.0"
-description: "引擎测试框架，快速验证全栈游戏开发引擎的全部流程和技能Header元数据，无需运行完整游戏开发周期。包含QA测试阶段验证，确保测试严格度。测试报告输出到项目根目录reports文件夹。"
+version: "2.3.0"
+description: "引擎测试框架，快速验证全栈游戏开发引擎的全部流程和技能Header元数据，无需运行完整游戏开发周期。包含QA测试阶段验证，确保测试严格度。测试报告输出到归档文件夹：reports/etf-v{框架版本}-engine-v{引擎版本}-{日期}/"
 author: "engine-team"
 created_at: "2026-02-20"
 updated_at: "2026-02-20"
@@ -31,8 +31,8 @@ contracts:
         description: "测试场景配置文件"
   output:
     required_documents:
-      - pattern: "reports/test-report-.*\\.md"
-        description: "测试报告（输出到项目根目录reports文件夹）"
+      - pattern: "reports/etf-v.*-engine-v.*-\\d{8}/test-report-.*\\.md"
+        description: "测试报告（归档格式：etf-v{框架版本}-engine-v{引擎版本}-{日期}）"
     validation_rules:
       - type: "PASS_RATE"
         threshold: 0.95

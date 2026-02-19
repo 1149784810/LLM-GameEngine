@@ -47,10 +47,26 @@ functions:
     name: "dispatch"
     signature: "dispatch(agent_type: STRING, task: TASK) -> RESULT"
     description: "调度智能体执行任务"
+  validators:
+    - name: "validate_dispatch_request"
+      signature: "validate_dispatch_request(request: DISPATCH_REQUEST) -> VALIDATION_RESULT"
+      description: "验证调度请求合法性"
+    - name: "validate_agent_availability"
+      signature: "validate_agent_availability(agent_type: STRING) -> BOOLEAN"
+      description: "验证智能体可用性"
   queries:
     - name: "get_available_agents"
       signature: "get_available_agents() -> [AGENT_INFO]"
       description: "获取可用智能体列表"
+    - name: "get_dispatch_history"
+      signature: "get_dispatch_history(project_id: STRING) -> [DISPATCH_RECORD]"
+      description: "获取调度历史记录"
+    - name: "parallel"
+      signature: "parallel(agents: [AGENT_TASK]) -> [RESULT]"
+      description: "并行调度多个智能体"
+    - name: "summary"
+      signature: "summary(dispatch_ids: [STRING]) -> DISPATCH_SUMMARY"
+      description: "汇总调度结果"
 ---
 
 # 智能体调度器
@@ -607,6 +623,65 @@ agent-dispatcher:
     - 汇总报告
     - 异常处理建议
 ```
+
+## 📋 调度记录
+
+### 调度记录格式
+
+每次调度执行后，必须生成调度记录，包含以下字段：
+
+| 字段名 | 类型 | 说明 | 示例 |
+|--------|------|------|------|
+| **dispatch_id** | STRING | 调度唯一标识 | DISP-20260220-001 |
+| **timestamp** | DATETIME | 调度时间戳 | 2026-02-20T14:30:00Z |
+| **source_agent** | STRING | 请求方智能体 | PL / LD / LP |
+| **target_agent** | STRING | 被调度智能体 | game-systems-designer |
+| **task_type** | STRING | 任务类型 | design / develop / test |
+| **task_description** | STRING | 任务描述 | 商店系统设计 |
+| **status** | STRING | 调度状态 | pending / running / completed / failed |
+| **result** | OBJECT | 调度结果 | { success: true, output: "..." } |
+| **duration_ms** | INT | 执行时长(毫秒) | 45000 |
+| **error_message** | STRING | 错误信息(如有) | null |
+
+### 调度记录示例
+
+```json
+{
+  "dispatch_id": "DISP-20260220-001",
+  "timestamp": "2026-02-20T14:30:00Z",
+  "source_agent": "PL",
+  "target_agent": "game-systems-designer",
+  "task_type": "design",
+  "task_description": "商店系统设计",
+  "status": "completed",
+  "result": {
+    "success": true,
+    "output_document": "docs/02-策划文档/系统策划/SD-商店系统-20260220.md"
+  },
+  "duration_ms": 45000,
+  "error_message": null
+}
+```
+
+### 调度记录存储
+
+调度记录存储位置：
+```
+projects/[项目名称]/logs/dispatch/
+├── DISP-20260220-001.json
+├── DISP-20260220-002.json
+└── ...
+```
+
+### 调度记录查询
+
+使用 `get_dispatch_history` 函数查询调度记录：
+```
+agent-dispatcher.get_dispatch_history(project_id: "Clicker Quest")
+→ 返回该项目的所有调度记录
+```
+
+---
 
 ## 注意事项
 
