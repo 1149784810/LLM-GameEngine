@@ -9,6 +9,10 @@ description: "Bug追踪管理器，负责记录、跟踪和管理项目中的所
 > 
 > **测试标准引用**：[qa-standards-manager](.trae/skills/qa-standards-manager/SKILL.md)
 > 
+> **经验库引用**：[project-experience-summarizer](.trae/skills/project-experience-summarizer/SKILL.md)
+> 
+> **缓存管理引用**：[experience-cache-manager](.trae/skills/project-experience-summarizer/experience-cache-manager.js)
+> 
 > 本文档使用标准术语：P0/P1/P2/P3、回归测试(RT)、功能测试(FT)、视觉测试(VT)、Stage X-Y、Step X-Y-Z
 
 ---
@@ -21,8 +25,11 @@ description: "Bug追踪管理器，负责记录、跟踪和管理项目中的所
 - 管理Bug的生命周期
 - **防止"按下葫芦浮起瓢"** - 每次修改后验证原有功能
 - 建立Bug知识库，避免重复问题
+- **⭐强制记录经验** - 每次修复后必须记录到经验库并更新缓存
 
-> **注意**：回归测试(RT)的标准定义参见 [qa-standards-manager](.trae/skills/qa-standards-manager/SKILL.md)。
+> **注意**：
+> - 回归测试(RT)的标准定义参见 [qa-standards-manager](.trae/skills/qa-standards-manager/SKILL.md)
+> - **经验记录是强制要求**，修复后必须执行
 
 ---
 
@@ -44,6 +51,7 @@ description: "Bug追踪管理器，负责记录、跟踪和管理项目中的所
 | 修复后不验证 | 可能引入新问题 | 修复后必须验证 |
 | 验证后不关闭 | 状态混乱 | 验证通过后立即关闭 |
 | 跳过回归测试(RT) | 改好A后B出错 | 每次修改后执行回归测试(RT) |
+| **修复后不记录经验** ⭐新增 | 经验无法传承 | **强制记录到经验库并更新缓存** |
 
 ---
 
@@ -180,8 +188,62 @@ projects/[项目名称]/
 │  6. 验证结果                                                 │
 │     ├── 通过 → 关闭Bug                                       │
 │     └── 不通过 → 返回步骤3重新修复                           │
+│           ↓                                                 │
+│  7. 记录经验 ⭐强制步骤                                      │
+│     └── 记录到经验库: experience-db.md                       │
+│     └── 更新缓存计数: experience-cache-manager.js            │
+│     └── 生成经验记录文档                                     │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
+```
+
+### Bug修复后强制经验记录流程 ⭐新增
+
+**修复完成后必须执行：**
+
+```
+Bug验证通过
+    ↓
+【强制】记录经验到经验库
+    ↓
+1. 生成经验记录
+   node bug-experience-recorder.js record --bug-id=<BugID>
+    ↓
+2. 更新缓存计数
+   node experience-cache-manager.js match --id=<缓存ID>
+    ↓
+3. 保存经验记录
+   追加到 experience-db.md
+    ↓
+经验记录完成，Bug完全闭环
+```
+
+**经验记录检查清单：**
+
+```markdown
+## Bug修复后经验记录检查清单
+
+### 必须完成
+- [ ] Bug已修复并验证通过
+- [ ] 已分析根本原因
+- [ ] 已记录经验到 experience-db.md
+- [ ] 已更新缓存计数（如匹配缓存条目）
+- [ ] 已生成经验记录文档
+
+### 经验记录内容
+- [ ] 项目类型
+- [ ] 问题类型
+- [ ] 问题描述
+- [ ] 根本原因
+- [ ] 解决方案
+- [ ] 预防措施
+- [ ] 相关文件
+- [ ] 记录时间
+
+### 缓存更新
+- [ ] 检查是否匹配现有缓存条目
+- [ ] 如匹配，执行: node experience-cache-manager.js match --id=<ID>
+- [ ] 如不匹配，考虑创建新缓存条目
 ```
 
 ### 回归测试(RT)检查清单（修复后必须执行）
