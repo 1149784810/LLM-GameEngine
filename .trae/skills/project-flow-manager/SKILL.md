@@ -119,31 +119,53 @@ Phase 0 → ⛔ BP-001 → Phase 1 → ⛔ BP-002 → Phase 2 → ⛔ BP-006 →
 #### Stage 0-0: 引擎初始化
 
 - [ ] 项目名称已确认
-- [ ] 项目根目录已创建
-- [ ] 标准目录结构已创建（docs/, src/, assets/, tests/）
+- [ ] 项目根目录已创建 `projects/[项目名称]/`
+- [ ] **标准目录结构已创建** ⛔ DIR-001
+  - [ ] `docs/` 及所有子目录（00-项目元数据/ 01-需求文档/ 02-策划文档/ 03-整合文档/ 04-技术文档/ 05-测试文档/ 06-交付文档/）
+  - [ ] `src/` 及所有子目录（core/ systems/ ui/ utils/）
+  - [ ] `assets/` 及所有子目录（images/ audio/ fonts/）
+  - [ ] `tests/` 及所有子目录（unit/ integration/ e2e/）
+  - [ ] `config/` 目录
 - [ ] 基础文件已初始化（index.html, README.md）
 - [ ] 所有目录在正确位置
 - [ ] **环境检查通过** ⛔ BP-001
+
+> **目录强制规则**：所有文档必须在 `projects/[项目名称]/` 目录下创建，禁止在项目目录外生成任何文档。参见 [fullstack-game-engine](.trae/skills/fullstack-game-engine/SKILL.md) 目录结构规范。
 
 ### Phase 1 完整性检查
 
 #### Stage 1-1: 主策划需求拆分
 
 - [ ] 需求拆分文档已完成 ⛔ BP-002
+- [ ] 文档命名符合规范：`REQ-SPLIT-[YYYYMMDD]-[版本].md`
+- [ ] 文档存放在正确位置：`docs/01-需求文档/`
 - [ ] 验收标准已定义
 
 #### Stage 1-2: 子策划并行细化
 
 - [ ] 所有子策划设计文档已完成 ⛔ BP-003
-- [ ] 文档保存在正确的目录（docs/下对应子目录）
+- [ ] 文档命名符合规范：`[角色标识]-[模块名]-[YYYYMMDD].md`
+- [ ] 文档保存在正确的目录（`docs/02-策划文档/[策划类型]/`）
+- [ ] 所有文档使用正确的角色标识（SD-, BD-, LvD-, CD-, 3CD-, UID-, ND-, TD-, AD-）
 
 #### Stage 1-3: 主策划文档整合
 
 - [ ] **主策划整合文档已完成** ⛔ BP-004
-- [ ] **完整功能路径说明书已输出**（主策划整合版）
-- [ ] **UI布局及验收说明已完成**（主策划整合版）
+- [ ] **文档命名符合规范**：
+  - [ ] `LD-TECH-REQ-[版本]-[YYYYMMDD].md`（完整技术需求文档）
+  - [ ] `LD-FUNC-PATH-[版本]-[YYYYMMDD].md`（完整功能路径说明书）
+  - [ ] `LD-UI-LAYOUT-[版本]-[YYYYMMDD].md`（UI布局及验收说明）
+- [ ] **文档存放在正确位置**：`docs/03-整合文档/`
+- [ ] **文档标识正确**：所有文档以 `LD-` 开头
+- [ ] 文档内容经过整合和一致性检查
+- [ ] 文档格式统一（Markdown标准格式）
 
-> **文档管理规则**：程序团队只读取主策划整合后的文档，禁止直接读取子策划原始文档。参见 [fullstack-game-engine](.trae/skills/fullstack-game-engine/SKILL.md) 文档管理规则。
+> **文档管理规则**：
+> 1. 程序团队只读取 `docs/03-整合文档/` 下的文档
+> 2. 只读取以 `LD-` 开头的文档
+> 3. 禁止直接读取 `docs/02-策划文档/` 下的子策划原始文档
+> 4. 禁止读取未通过 BP-004 解锁的文档
+> 5. 参见 [fullstack-game-engine](.trae/skills/fullstack-game-engine/SKILL.md) 文档管理规则。
 
 ### Phase 2 完整性检查
 
