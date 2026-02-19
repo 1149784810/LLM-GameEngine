@@ -1,7 +1,7 @@
 ---
 name: "engine-test-framework"
-version: "2.0.0"
-description: "引擎测试框架，快速验证全栈游戏开发引擎的全部流程和技能Header元数据，无需运行完整游戏开发周期。"
+version: "2.1.0"
+description: "引擎测试框架，快速验证全栈游戏开发引擎的全部流程和技能Header元数据，无需运行完整游戏开发周期。包含QA测试阶段验证，确保测试严格度。"
 author: "engine-team"
 created_at: "2026-02-20"
 updated_at: "2026-02-20"
@@ -159,6 +159,18 @@ tracking:
       name: "AGENT_DISPATCH_INCOMPLETE"
       severity: "MEDIUM"
       rollback_required: false
+    - code: "E008"
+      name: "QA_STAGE_INCOMPLETE"
+      severity: "HIGH"
+      rollback_required: false
+    - code: "E009"
+      name: "ANTI_HALLUCINATION_MISSING"
+      severity: "CRITICAL"
+      rollback_required: false
+    - code: "E010"
+      name: "EVIDENCE_REQUIREMENT_MISSING"
+      severity: "HIGH"
+      rollback_required: false
   checkpoints:
     - id: "CP-001"
       name: "技能扫描完成"
@@ -197,6 +209,15 @@ functions:
     - name: "validate_agent_dispatch"
       signature: "validate_agent_dispatch(content: STRING) -> VALIDATION_RESULT"
       description: "验证Agent调度记录"
+    - name: "validate_qa_stage"
+      signature: "validate_qa_stage(content: STRING) -> VALIDATION_RESULT"
+      description: "验证QA测试阶段定义"
+    - name: "validate_anti_hallucination"
+      signature: "validate_anti_hallucination(content: STRING) -> VALIDATION_RESULT"
+      description: "验证反幻觉机制定义"
+    - name: "validate_evidence_requirements"
+      signature: "validate_evidence_requirements(content: STRING) -> VALIDATION_RESULT"
+      description: "验证测试证据要求"
   state_managers:
     - name: "save_checkpoint"
       signature: "save_checkpoint(state: STATE) -> CHECKPOINT_ID"
@@ -220,6 +241,15 @@ functions:
     - name: "get_parallel_stages"
       signature: "get_parallel_stages() -> PARALLEL_STAGE_MAP"
       description: "获取并行阶段定义"
+    - name: "get_qa_test_types"
+      signature: "get_qa_test_types() -> TEST_TYPE_MAP"
+      description: "获取QA测试类型定义"
+    - name: "get_anti_hallucination_rules"
+      signature: "get_anti_hallucination_rules() -> ANTI_HALLUCINATION_RULE_MAP"
+      description: "获取反幻觉验证规则"
+    - name: "get_evidence_requirements"
+      signature: "get_evidence_requirements() -> EVIDENCE_REQUIREMENT_MAP"
+      description: "获取测试证据要求"
 ---
 
 # 引擎测试框架 (Engine Test Framework)
@@ -277,7 +307,8 @@ tools/engine-test-framework/
 │   ├── function-test-suite.js   # 函数测试套件
 │   ├── blockage-test-suite.js   # 阻塞点测试套件 ⭐新增
 │   ├── parallel-stage-test-suite.js # 并行阶段测试套件 ⭐新增
-│   └── agent-dispatch-test-suite.js # Agent调度测试套件 ⭐新增
+│   ├── agent-dispatch-test-suite.js # Agent调度测试套件 ⭐新增
+│   └── qa-stage-test-suite.js   # QA测试阶段验证套件 ⭐新增
 ├── mock/
 │   ├── mock-agent-factory.js    # Mock Agent工厂
 │   └── hallucination-injector.js # 幻觉注入器
@@ -305,7 +336,9 @@ node tools/engine-test-framework/cli.js suite --name=function
 node tools/engine-test-framework/cli.js suite --name=blockage      # 阻塞点测试 ⭐新增
 node tools/engine-test-framework/cli.js suite --name=parallel     # 并行阶段测试 ⭐新增
 node tools/engine-test-framework/cli.js suite --name=agent-dispatch # Agent调度测试 ⭐新增
+node tools/engine-test-framework/cli.js suite --name=qa-stage     # QA测试阶段验证 ⭐新增
 node tools/engine-test-framework/cli.js suite --name=flow         # 流程验证（blockage+parallel+agent-dispatch）⭐新增
+node tools/engine-test-framework/cli.js suite --name=qa           # QA验证（qa-stage）⭐新增
 node tools/engine-test-framework/cli.js suite --name=all          # 运行所有测试套件 ⭐新增
 
 # 生成Markdown报告
@@ -453,6 +486,47 @@ WHEN 用户执行"启动测试框架"命令:
 - 伴生阶段-A: agent-dispatcher（智能体调度）
 - 伴生阶段-B: qa-standards-manager（验收标准）
 - 伴生阶段-C: bug-tracker（Bug追踪）
+
+### 7. QA Stage测试套件 ⭐新增
+
+验证QA测试阶段的严格度和精确度，确保QA阶段不会流于形式：
+
+| 测试项 | 说明 | 严重级别 |
+|--------|------|----------|
+| TEST_TYPES_DEFINED | FT/VT/FPT/RT测试类型定义 | ERROR |
+| ANTI_HALLUCINATION | 反幻觉机制定义 | CRITICAL |
+| EVIDENCE_REQUIREMENTS | 测试证据要求 | ERROR |
+| ACCEPTANCE_CRITERIA | 验收标准完整性 | ERROR |
+| EXPERIENCE_INTEGRATION | 经验库集成流程 | WARNING |
+| REGRESSION_REQUIREMENTS | 回归测试要求 | ERROR |
+| QA_EXECUTION_CHECKLIST | QA执行清单 | WARNING |
+| PROHIBITED_BEHAVIORS | 禁止行为定义 | WARNING |
+
+**测试类型定义**：
+- FT: 功能测试（P0，不可跳过）
+- VT: 视觉测试（P0，不可跳过）
+- FPT: 完整路径测试（P0，不可跳过）
+- RT: 回归测试（P0，不可跳过）
+- PT: 性能测试（P1，可跳过）
+
+**反幻觉验证规则**：
+- 证据优先：无证据 = 未测试
+- 悲观假设：代码存在 ≠ 功能正常
+- 通过率合理性：100%通过 = 测试无效
+- 证据真实性：截图必须包含时间戳
+- 禁止行为：禁止虚构测试结果
+
+**测试证据要求**：
+- 截图证据：每项测试至少1张截图
+- 日志证据：控制台输出记录
+- 操作记录：实际执行步骤可追溯
+- 时间戳：精确到分钟
+
+**回归测试要求**：
+- 修复后必须执行回归测试
+- 覆盖所有测试用例
+- 验证修复的问题已解决
+- 确认未引入新问题
 
 ---
 
@@ -691,3 +765,4 @@ Pass Rate:        100.0% ✅
 |------|------|---------|
 | v1.0.0 | 2026-02-20 | 初始版本，包含Header/Dependency/Function三大测试套件 |
 | v2.0.0 | 2026-02-20 | 新增Blockage/Parallel/Agent-Dispatch三大测试套件，支持流程验证 |
+| v2.1.0 | 2026-02-20 | 新增QA Stage测试套件，验证QA测试严格度、反幻觉机制、测试证据要求 |

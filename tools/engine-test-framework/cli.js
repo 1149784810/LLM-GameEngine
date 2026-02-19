@@ -18,6 +18,7 @@ const { FunctionTestSuite } = require('./suites/function-test-suite');
 const { BlockageTestSuite } = require('./suites/blockage-test-suite');
 const { ParallelStageTestSuite } = require('./suites/parallel-stage-test-suite');
 const { AgentDispatchTestSuite } = require('./suites/agent-dispatch-test-suite');
+const { QAStageTestSuite } = require('./suites/qa-stage-test-suite');
 
 function printHelp() {
     console.log(`
@@ -39,7 +40,9 @@ Suites:
   blockage      Blockage point definition validation
   parallel      Parallel stage definition validation
   agent-dispatch Agent dispatch record validation
+  qa-stage      QA test stage validation (anti-hallucination, evidence, regression) ⭐新增
   flow          Run blockage + parallel + agent-dispatch (flow validation)
+  qa            Run qa-stage (QA validation) ⭐新增
   all           Run all suites
 
 Options:
@@ -75,6 +78,7 @@ async function main() {
     runner.registerSuite('blockage', new BlockageTestSuite({ verbose }));
     runner.registerSuite('parallel', new ParallelStageTestSuite({ verbose }));
     runner.registerSuite('agent-dispatch', new AgentDispatchTestSuite({ verbose }));
+    runner.registerSuite('qa-stage', new QAStageTestSuite({ verbose }));
     
     let exitCode = 0;
     
@@ -135,6 +139,10 @@ async function main() {
                 runner.registerSuite('blockage', new BlockageTestSuite({ verbose }));
                 runner.registerSuite('parallel', new ParallelStageTestSuite({ verbose }));
                 runner.registerSuite('agent-dispatch', new AgentDispatchTestSuite({ verbose }));
+                results = await runner.runAllSuites();
+            } else if (suiteName === 'qa') {
+                runner.suites.clear();
+                runner.registerSuite('qa-stage', new QAStageTestSuite({ verbose }));
                 results = await runner.runAllSuites();
             } else {
                 results = await runner.runSuite(suiteName);

@@ -6,10 +6,10 @@
 |--------|-------|
 | Total Skills | 26 |
 | Duration | 0.05s |
-| Passed | 573 |
-| Failed | 21 |
-| Warnings | 20 |
-| Pass Rate | 96.5% |
+| Passed | 629 |
+| Failed | 27 |
+| Warnings | 26 |
+| Pass Rate | 95.9% |
 
 ## Suite Results
 
@@ -21,6 +21,7 @@
 | blockage | 98 | 13 | 12 |
 | parallel | 38 | 1 | 1 |
 | agent-dispatch | 43 | 7 | 7 |
+| qa-stage | 56 | 6 | 6 |
 
 ## Failed Tests
 
@@ -72,6 +73,20 @@
   - agent-dispatcher建议定义parallel函数
 - **[WARNING]** agent-dispatcher: AGENT_DISPATCHER_FUNC_summary
   - agent-dispatcher建议定义summary函数
+### qa-stage
+
+- **[WARNING]** qa-standards-manager: ACCEPTANCE_CRITERIA_FPT_COMPLETE
+  - 验收标准"完整路径测试完成"未明确定义
+- **[WARNING]** qa-standards-manager: ACCEPTANCE_CRITERIA_ANTI_HALLUCINATION_SIGNED
+  - 验收标准"反幻觉自检签署"未明确定义
+- **[WARNING]** qa-standards-manager: REGRESSION_REQUIREMENT_AFTER_FIX
+  - 回归测试要求"修复后执行"未明确定义
+- **[WARNING]** qa-standards-manager: REGRESSION_REQUIREMENT_ALL_TEST_CASES
+  - 回归测试要求"覆盖所有用例"未明确定义
+- **[WARNING]** qa-standards-manager: PROHIBITED_BEHAVIOR_禁止仅凭代码
+  - 建议定义禁止行为"禁止仅凭代码推断"
+- **[WARNING]** qa-standards-manager: PROHIBITED_BEHAVIOR_禁止复制粘贴
+  - 建议定义禁止行为"禁止复制粘贴测试结果"
 
 ---
-Generated at: 2026-02-19T21:06:21.021Z
+Generated at: 2026-02-19T21:21:43.469Z
