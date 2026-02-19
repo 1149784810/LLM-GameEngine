@@ -8,17 +8,21 @@ description: "状态管理器，负责维护游戏开发流程的完整状态、
 > **术语引用**：[terminology-standard](.trae/skills/terminology-standard/SKILL.md)
 > 
 > **流程引用**：[fullstack-game-engine](.trae/skills/fullstack-game-engine/SKILL.md)
+> 
+> **事件引用**：[event-bus](.trae/skills/event-bus/SKILL.md)
 
 ---
 
 ## 功能概述
 
-本技能负责管理游戏开发流程的**完整状态生命周期**，包括：
+本技能负责管理游戏开发流程的**状态生命周期**，包括：
 - 状态快照创建与存储
 - 状态历史记录维护
 - 状态回滚与恢复
 - 数据一致性验证
 - 并发状态隔离
+
+> **注意**：本技能只负责状态管理，不定义开发流程。流程定义参见 [fullstack-game-engine](.trae/skills/fullstack-game-engine/SKILL.md)。
 
 > **核心原则**：每个状态变更都必须原子化，支持回滚，确保数据一致性
 
@@ -47,14 +51,14 @@ STATE ::= {
   timestamp: ISO8601,          // 创建时间
   project_name: STRING,        // 项目名称
   
-  // 流程位置
+  // 流程位置（引用 fullstack-game-engine 定义）
   current_position: {
     phase: Phase,              // Phase 0-4
     stage: Stage,              // Stage X-Y
     step: Step|null            // Step X-Y-Z (可选)
   },
   
-  // 阻塞点状态
+  // 阻塞点状态（引用 project-flow-manager 管理）
   blocking_points: {
     [bp_id: BP-XXX]: {
       status: "LOCKED" | "UNLOCKED",
@@ -63,7 +67,7 @@ STATE ::= {
     }
   },
   
-  // 活跃角色
+  // 活跃角色（引用 hr-manager 分配）
   active_roles: [{
     role_id: ROLE_ID,
     assigned_at: ISO8601,
@@ -91,7 +95,7 @@ STATE ::= {
     }
   },
   
-  // 事件日志引用
+  // 事件日志引用（关联 event-bus）
   event_log_anchor: EVENT_ID,  // 关联到 event-bus 的事件ID
   
   // 元数据
@@ -266,238 +270,4 @@ STATE_SUMMARY ::= {
 ### 6. 验证状态一致性
 
 ```
-FUNCTION: validate_state_consistency(state: STATE) → {
-  valid: BOOL,
-  errors: [CONSISTENCY_ERROR],
-  warnings: [CONSISTENCY_WARNING]
-}
-
-CONSISTENCY_ERROR ::= 
-  | ARTIFACT_MISSING { path: STRING }
-  | ARTIFACT_CHECKSUM_MISMATCH { path: STRING, expected: SHA256, actual: SHA256 }
-  | ROLE_STATE_INVALID { role_id: ROLE_ID, reason: STRING }
-  | BP_STATE_INVALID { bp_id: BP-XXX, reason: STRING }
-  | PARENT_STATE_NOT_FOUND { parent_state_id: UUID }
-
-示例:
-  PL → state-manager.validate_state_consistency(current_state)
-  返回: {
-    valid: false,
-    errors: [
-      { type: "ARTIFACT_MISSING", path: "docs/02-策划文档/SD-GAMEPLAY-20240219.md" }
-    ],
-    warnings: []
-  }
-```
-
-### 7. 比较状态差异
-
-```
-FUNCTION: diff_states(
-  state_a_id: UUID,
-  state_b_id: UUID
-) → STATE_DIFF
-
-STATE_DIFF ::= {
-  added_artifacts: [ARTIFACT_PATH],
-  removed_artifacts: [ARTIFACT_PATH],
-  modified_artifacts: [{ path: STRING, checksum_a: SHA256, checksum_b: SHA256 }],
-  role_changes: [{ role_id: ROLE_ID, from: STATUS, to: STATUS }],
-  bp_changes: [{ bp_id: BP-XXX, from: STATUS, to: STATUS }],
-  position_change: { from: POSITION, to: POSITION }
-}
-
-示例:
-  PL → state-manager.diff_states("uuid-002", "uuid-003")
-  返回: {
-    added_artifacts: ["docs/02-策划文档/SD-GAMEPLAY-20240219.md", ...],
-    removed_artifacts: [],
-    modified_artifacts: [],
-    role_changes: [{ role_id: "SD-1", from: "IN_PROGRESS", to: "COMPLETED" }],
-    bp_changes: [{ bp_id: "BP-003", from: "LOCKED", to: "UNLOCKED" }],
-    position_change: { from: { phase: 1, stage: "1-2" }, to: { phase: 1, stage: "1-3" } }
-  }
-```
-
----
-
-## 数据存储规范
-
-### 目录结构
-
-```
-projects/{project_name}/
-├── .state/                          # 状态存储目录
-│   ├── state_INIT.json              # 初始状态
-│   ├── state_{uuid}.json            # 各状态快照
-│   ├── chain.json                   # 状态链索引
-│   ├── checkpoints.json             # 检查点索引
-│   └── archive/                     # 归档状态（超过30天的）
-│       └── state_{uuid}.json.gz
-```
-
-### 状态文件格式
-
-```json
-{
-  "state_id": "550e8400-e29b-41d4-a716-446655440000",
-  "parent_state_id": null,
-  "timestamp": "2024-02-19T10:30:00Z",
-  "project_name": "clicker-game",
-  "current_position": {
-    "phase": 1,
-    "stage": "1-2",
-    "step": null
-  },
-  "blocking_points": {
-    "BP-001": { "status": "UNLOCKED", "unlocked_at": "2024-02-19T10:00:00Z", "unlocked_by": "PL" },
-    "BP-002": { "status": "UNLOCKED", "unlocked_at": "2024-02-19T10:15:00Z", "unlocked_by": "LD" },
-    "BP-003": { "status": "LOCKED", "unlocked_at": null, "unlocked_by": null }
-  },
-  "active_roles": [
-    {
-      "role_id": "SD-1",
-      "assigned_at": "2024-02-19T10:30:00Z",
-      "task": "M001",
-      "status": "IN_PROGRESS",
-      "artifacts": []
-    }
-  ],
-  "completed_roles": [],
-  "artifacts": {},
-  "event_log_anchor": "event-001",
-  "metadata": {
-    "version": "1.0",
-    "schema_hash": "sha256:abc123...",
-    "is_checkpoint": true,
-    "checkpoint_name": "Stage-1-2-start"
-  }
-}
-```
-
-### 原子性保证
-
-```
-写入流程:
-1. 计算新状态的 schema_hash
-2. 写入到 .state/temp_{uuid}.json
-3. 调用 fsync 确保落盘
-4. 重命名为 state_{uuid}.json
-5. 更新 chain.json
-6. 如果是 checkpoint，更新 checkpoints.json
-```
-
----
-
-## 回滚策略
-
-### 安全回滚原则
-
-1. **只能回滚到检查点**：只有 is_checkpoint=true 的状态可以作为回滚目标
-2. **回滚创建新状态**：不回写旧状态，而是基于旧状态创建新状态
-3. **保留历史**：被回滚的状态仍然保留在历史中，便于审计
-4. **PL确认**：回滚计划必须经 PL 确认后才执行
-
-### 回滚执行流程
-
-```
-PL 请求回滚
-    ↓
-state-manager 验证目标状态
-    ↓
-state-manager 生成 rollback_plan
-    ↓
-PL 确认 rollback_plan
-    ↓
-state-manager 执行回滚:
-  - 标记当前状态为 ROLLED_BACK
-  - 基于目标状态创建新状态
-  - 更新 active_roles
-  - 重置 blocking_points
-  - 通知 event-bus 发布 ROLLBACK_COMPLETED 事件
-    ↓
-PL 根据新状态重新调度
-```
-
----
-
-## 错误处理
-
-### 状态损坏恢复
-
-```
-检测到状态文件损坏
-    ↓
-尝试从 parent_state_id 重建
-    ↓
-如果失败，尝试从最近检查点恢复
-    ↓
-如果失败，报告 PL 需要人工干预
-```
-
-### 并发冲突处理
-
-```
-如果两个操作同时修改状态:
-  - 使用时间戳 + 乐观锁
-  - 后提交的操作检测到版本冲突
-  - 返回 ConcurrentModificationError
-  - PL 需要重新获取状态后重试
-```
-
----
-
-## 使用示例
-
-### 完整流程状态管理
-
-```
-// 1. 初始化项目
-PL → state-manager.initialize_state("clicker-game")
-返回: state_001 (INIT)
-
-// 2. BP-001 解锁后保存检查点
-PL → state-manager.save_checkpoint(state_001, "BP-001-unlocked", true)
-返回: state_002
-
-// 3. BP-002 解锁后保存检查点
-PL → state-manager.save_checkpoint(state_002, "BP-002-unlocked", true)
-返回: state_003
-
-// 4. Stage 1-2 完成，所有子策划交付
-PL → state-manager.save_checkpoint(state_003, "Stage-1-2-complete", true)
-返回: state_004
-
-// 5. 发现 SD-1 输出不合格，需要回滚到 Stage 1-2 开始
-PL → state-manager.rollback_to(state_003.state_id)
-返回: {
-  success: true,
-  new_state: state_005,
-  rollback_plan: { ... }
-}
-
-// 6. 重新分配 SD-1 任务
-PL 基于 state_005 重新调度 SD-1
-```
-
----
-
-## 接口汇总
-
-| 接口 | 输入 | 输出 | 调用方 |
-|------|------|------|--------|
-| `initialize_state` | project_name | STATE | PL |
-| `save_checkpoint` | STATE, name, is_checkpoint | STATE | PL |
-| `load_state` | state_id | STATE | PL |
-| `rollback_to` | target_state_id | {success, new_state, plan} | PL |
-| `get_state_history` | filter | [STATE_SUMMARY] | PL |
-| `validate_state_consistency` | STATE | {valid, errors} | PL |
-| `diff_states` | state_a_id, state_b_id | STATE_DIFF | PL |
-
----
-
-## 版本记录
-
-| 版本 | 日期 | 变更内容 |
-|------|------|---------|
-| v1.0 | 2024-02-19 | 初始版本，支持完整状态生命周期管理 |
+FUNCTION: validate_state_consistency(state: STATE) →
