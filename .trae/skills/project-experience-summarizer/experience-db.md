@@ -764,10 +764,267 @@
 
 ---
 
+## 经验记录 #17 - 多文件JavaScript项目脚本加载顺序问题（Clicker Quest）
+
+- **项目类型**: Web游戏（HTML5 + JavaScript ES6）
+- **需求内容**: 连点器游戏，包含多个系统模块（Core、Systems、UI、Utils）
+- **问题类型**: 技术问题 / 脚本加载顺序 / 标识符重复声明
+- **问题描述**: 
+  - 浏览器报错：`Identifier 'CriticalLevel' has already been declared`
+  - 游戏初始化失败，`CriticalHitSystem is not defined`
+  - 多个文件定义了相同的常量/枚举
+- **根本原因**: 
+  - **脚本加载顺序错误**: `CriticalHitSystem.js` 定义了 `CriticalLevel`，但 `ClickManager.js` 在它之前加载
+  - **重复定义问题**: `ClickManager.js` 也尝试定义 `CriticalLevel`，使用 `var` 声明但仍有变量提升问题
+  - **HTML脚本顺序不当**: 核心模块在系统模块之前加载，导致依赖关系错误
+- **解决方案**: 
+  - **调整脚本加载顺序**: 系统模块（定义枚举和基础类）必须在核心模块之前加载
+  - **移除重复定义**: 只在一个文件中定义枚举/常量，其他文件直接使用
+  - **正确的HTML加载顺序**:
+    ```html
+    <!-- 1. 配置文件 -->
+    <script src="config/game.config.js"></script>
+    
+    <!-- 2. 系统模块（定义枚举和基础类） -->
+    <script src="js/systems/CriticalHitSystem.js"></script>
+    <script src="js/systems/DPSManager.js"></script>
+    
+    <!-- 3. 核心模块（依赖系统模块） -->
+    <script src="js/core/EventBus.js"></script>
+    <script src="js/core/ClickManager.js"></script>
+    <script src="js/core/GameManager.js"></script>
+    ```
+- **预防措施**: 
+  - **依赖关系图**: 开发前绘制模块依赖关系图，确定加载顺序
+  - **枚举/常量集中定义**: 所有共享的枚举和常量应在最基础的模块中定义
+  - **脚本加载检查清单**:
+    - [ ] 确认所有依赖模块已先加载
+    - [ ] 确认没有重复定义相同标识符
+    - [ ] 确认浏览器控制台无错误
+  - **使用 `const` 而非 `var`**: `const` 不允许重复声明，更容易发现错误
+- **相关文件**: 
+  - projects/Clicker Quest/index.html
+  - projects/Clicker Quest/js/systems/CriticalHitSystem.js
+  - projects/Clicker Quest/js/core/ClickManager.js
+- **记录时间**: 2026-02-20
+- **适用范围**: 所有使用传统脚本方式的多文件JavaScript项目
+
+---
+
+## 经验记录 #18 - 事件数据结构不一致导致UI不更新（Clicker Quest）
+
+- **项目类型**: Web游戏（HTML5 + JavaScript）
+- **需求内容**: 点击按钮后金币UI数字更新
+- **问题类型**: 技术问题 / 事件数据结构不一致
+- **问题描述**: 
+  - 点击按钮后金币正确增加，但UI数字不更新
+  - 事件正确触发，但UI没有响应
+- **根本原因**: 
+  - **事件数据结构不一致**: 
+    - `GoldManager` 发出 `GOLD_CHANGED` 事件，数据结构为 `{ oldGold, newGold, change, source }`
+    - `MainScreenUI` 监听事件时使用 `data.currentGold`，与实际字段不匹配
+  - **类似问题**: `DPS_CHANGED` 事件也有类似的数据结构不一致
+- **解决方案**: 
+  - **统一事件数据结构**: 确保事件发送方和接收方使用相同的字段名
+  - **修复代码**:
+    ```javascript
+    // 错误写法
+    const goldChangedHandler = (data) => {
+        this.updateGold(data.currentGold); // 字段不存在
+    };
+    
+    // 正确写法
+    const goldChangedHandler = (data) => {
+        this.updateGold(data.newGold); // 使用正确的字段名
+    };
+    ```
+- **预防措施**: 
+  - **事件数据结构文档化**: 在 `GameEvents` 定义处注释每个事件的数据结构
+  - **TypeScript或JSDoc**: 使用类型注释明确事件数据结构
+  - **代码审查检查清单**:
+    - [ ] 事件发送方的数据结构
+    - [ ] 事件接收方的字段访问
+    - [ ] 两边字段名是否一致
+- **相关文件**: 
+  - projects/Clicker Quest/js/ui/MainScreenUI.js
+  - projects/Clicker Quest/js/core/GoldManager.js
+- **记录时间**: 2026-02-20
+- **适用范围**: 所有使用事件驱动架构的项目
+
+---
+
+## 经验记录 #19 - 点击事件目标元素判断错误（Clicker Quest）
+
+- **项目类型**: Web游戏（HTML5 + JavaScript）
+- **需求内容**: 点击按钮获取金币
+- **问题类型**: 技术问题 / DOM事件处理
+- **问题描述**: 
+  - 点击按钮没有任何反应
+  - 按钮点击事件未正确触发
+- **根本原因**: 
+  - **元素ID不匹配**: `ClickManager` 查找 `#gold-coin`，但HTML中的按钮ID是 `#main-coin`
+  - **子元素点击问题**: 点击按钮内部的 `<img>` 或 `<span>` 时，`event.target` 是子元素而非按钮本身
+  - **点击区域验证失败**: `isValidClickArea` 方法检查 `event.target` 的边界，但子元素边界与按钮边界不同
+- **解决方案**: 
+  - **修复元素查找**: 使用正确的元素ID或类名
+  - **向上遍历DOM树**: 检查点击目标是否是目标元素的子元素
+    ```javascript
+    let checkElement = targetElement;
+    while (checkElement) {
+        if (checkElement === this.clickTargetElement || 
+            checkElement.id === 'main-coin' ||
+            checkElement.classList.contains('coin-btn')) {
+            return true;
+        }
+        checkElement = checkElement.parentElement;
+    }
+    ```
+- **预防措施**: 
+  - **元素ID/类名一致性检查**: 确保JavaScript中使用的ID/类名与HTML一致
+  - **子元素点击处理**: 始终考虑点击目标可能是子元素的情况
+  - **使用事件委托**: 在父元素上监听事件，通过 `event.target.closest()` 查找目标
+- **相关文件**: 
+  - projects/Clicker Quest/js/core/ClickManager.js
+  - projects/Clicker Quest/index.html
+- **记录时间**: 2026-02-20
+- **适用范围**: 所有需要处理DOM点击事件的项目
+
+---
+
+## 经验记录 #20 - 方法名不一致导致运行时错误（Clicker Quest）
+
+- **项目类型**: Web游戏（HTML5 + JavaScript）
+- **需求内容**: 数字格式化显示
+- **问题类型**: 技术问题 / 方法名不一致
+- **问题描述**: 
+  - 浏览器报错：`this.numberFormatter.formatNumber is not a function`
+  - 游戏初始化失败
+- **根本原因**: 
+  - **方法名不一致**: 
+    - `NumberFormatter` 类定义了 `format()` 方法
+    - `AchievementScreenUI` 调用了 `formatNumber()` 方法
+  - **缺少方法名检查**: 没有验证调用的方法是否存在
+- **解决方案**: 
+  - **统一方法命名**: 确保调用方使用正确的方法名
+  - **修复代码**: `formatNumber(value)` → `format(value)`
+- **预防措施**: 
+  - **API文档化**: 为每个工具类编写清晰的API文档
+  - **IDE智能提示**: 使用JSDoc注释提供方法提示
+  - **代码审查检查清单**:
+    - [ ] 调用的方法是否存在于目标类
+    - [ ] 方法名拼写是否正确
+    - [ ] 参数类型和数量是否正确
+- **相关文件**: 
+  - projects/Clicker Quest/js/utils/NumberFormatter.js
+  - projects/Clicker Quest/js/ui/AchievementScreenUI.js
+- **记录时间**: 2026-02-20
+- **适用范围**: 所有使用工具类/帮助类的项目
+
+---
+
+## 经验记录 #21 - 空值检查不完善导致运行时错误（Clicker Quest）
+
+- **项目类型**: Web游戏（HTML5 + JavaScript）
+- **需求内容**: 游戏数据管理和事件处理
+- **问题类型**: 技术问题 / 空值检查不完善
+- **问题描述**: 
+  - 浏览器报错：`Cannot set properties of undefined (setting 'currentGold')`
+  - 事件处理时访问未初始化的属性
+- **根本原因**: 
+  - **嵌套属性访问未检查**: `this.gameData.gold.currentGold` 在 `gameData.gold` 为 `undefined` 时报错
+  - **对象初始化顺序问题**: 事件可能在数据完全初始化之前触发
+  - **缺少防御性编程**: 没有对嵌套属性进行空值检查
+- **解决方案**: 
+  - **添加空值检查**: 在访问嵌套属性前检查每一层
+    ```javascript
+    // 错误写法
+    if (this.gameData) {
+        this.gameData.gold.currentGold = value;
+    }
+    
+    // 正确写法
+    if (this.gameData && this.gameData.gold) {
+        this.gameData.gold.currentGold = value;
+    }
+    ```
+  - **使用可选链操作符**: `this.gameData?.gold?.currentGold`
+- **预防措施**: 
+  - **防御性编程原则**: 始终假设数据可能为空
+  - **可选链操作符**: 使用 `?.` 安全访问嵌套属性
+  - **代码审查检查清单**:
+    - [ ] 所有嵌套属性访问是否有空值检查
+    - [ ] 事件处理是否考虑数据未初始化的情况
+    - [ ] 是否使用了可选链操作符
+- **相关文件**: 
+  - projects/Clicker Quest/js/core/GameManager.js
+  - projects/Clicker Quest/js/ui/AnimationManager.js
+- **记录时间**: 2026-02-20
+- **适用范围**: 所有需要访问嵌套对象属性的项目
+
+---
+
+## ⭐ 经验记录 #22 - QA测试未进行实际运行验证（Clicker Quest）
+
+- **项目类型**: Web游戏（HTML5 + JavaScript）
+- **需求内容**: 连点器游戏完整开发流程
+- **问题类型**: 流程问题 / QA测试覆盖不足
+- **问题描述**: 
+  - QA报告显示"100%通过"，但实际运行时发现多个严重Bug
+  - 以下问题在用户测试时才发现：
+    1. `CriticalLevel` 重复声明导致游戏无法启动
+    2. 点击按钮无反应
+    3. 金币UI不更新
+    4. 方法名不一致导致运行时错误
+    5. 空值检查不完善导致崩溃
+- **根本原因**: 
+  - **未进行实际运行测试**: QA只检查了代码存在性和文档完整性，没有实际运行游戏
+  - **缺少端到端测试**: 没有模拟用户完整操作流程
+  - **控制台错误未检查**: 没有打开浏览器开发者工具检查错误
+  - **过度依赖静态检查**: 只检查文件是否存在、代码是否规范
+- **为什么QA没有发现这些问题**: 
+  - **经验记录 #5 和 #11 已经记录过类似问题**: 策划审核流于形式、QA测试覆盖不足
+  - **但问题仍然重复发生**: 说明之前的经验教训没有被有效应用
+  - **缺少强制执行机制**: 虽然有经验库，但没有强制要求QA进行实际运行测试
+- **解决方案**: 
+  - **强制实际运行测试**: QA必须实际启动游戏，点击每个按钮
+  - **控制台检查强制化**: 测试时必须打开浏览器开发者工具
+  - **完整用户流程测试**: 从启动到核心功能，完整走一遍
+- **预防措施**: 
+  - **QA测试强制检查清单**:
+    - [ ] 游戏能否正常启动（无控制台红色错误）
+    - [ ] 核心按钮能否点击（实际点击测试）
+    - [ ] 点击后UI是否更新（观察数值变化）
+    - [ ] 完整用户流程是否通畅
+    - [ ] 多浏览器测试（Chrome、Edge、Firefox）
+  - **测试证据要求**: QA必须提供测试截图或录屏
+  - **回归测试**: 每次修改后必须重新测试核心功能
+- **相关文件**: 
+  - projects/Clicker Quest/docs/05-测试文档/QA-TEST-REPORT-v1.0-20260220.md
+- **记录时间**: 2026-02-20
+- **关联经验**: 经验记录 #5（QA测试覆盖不足）、#11（策划审核流于形式）、#12（主程序审核漏掉工程问题）
+- **教训**: 
+  - 经验库的价值在于应用，而不只是记录
+  - 必须有强制执行机制确保经验被应用
+  - QA测试必须包含实际运行验证，不能只做静态检查
+
+---
+
 ### JavaScript开发规范
 - 经验记录 #9: JavaScript常量定义顺序问题
 - 经验记录 #10: 类未暴露到全局命名空间
 - 经验记录 #15: ES Module CORS问题重复犯错（连点器游戏）
+- 经验记录 #17: 多文件JavaScript项目脚本加载顺序问题（Clicker Quest）
+- 经验记录 #20: 方法名不一致导致运行时错误（Clicker Quest）
+
+### 事件驱动架构
+- 经验记录 #18: 事件数据结构不一致导致UI不更新（Clicker Quest）
+
+### DOM事件处理
+- 经验记录 #19: 点击事件目标元素判断错误（Clicker Quest）
+
+### 防御性编程
+- 经验记录 #21: 空值检查不完善导致运行时错误（Clicker Quest）
 
 ### 流程执行与经验管理
 - 经验记录 #16: 项目经验总结技能调用缺失
+- 经验记录 #22: QA测试未进行实际运行验证（Clicker Quest）
