@@ -1,6 +1,10 @@
 ---
 name: "fullstack-engine-init"
 description: "初始化全栈游戏开发引擎环境，检查必要技能依赖。在用户发出制作游戏需求时调用，验证全栈游戏开发引擎和需求规范器技能是否存在，自动扫描和加载所有游戏开发相关技能，并激活引擎模块调试器进行调用追踪。"
+dependencies:
+  - terminology-standard
+  - engine-module-debugger
+layer: 3
 ---
 
 # 全栈引擎初始化
@@ -84,6 +88,12 @@ description: "初始化全栈游戏开发引擎环境，检查必要技能依赖
 | 序号 | 技能名称 | 技能目录 | 用途说明 |
 |------|----------|----------|----------|
 | 8 | engine-module-debugger | `.trae/skills/engine-module-debugger/` | 引擎模块调用追踪与调试，生成模块使用报告 |
+
+### 流程阶段守卫依赖（必须）⭐新增
+
+| 序号 | 技能名称 | 技能目录 | 用途说明 |
+|------|----------|----------|----------|
+| 9 | phase-stage-guard | `.trae/skills/phase-stage-guard/` | 流程阶段守卫，强制执行Stage顺序检查，防止跳过阶段 |
 
 ### 自动扫描的其他技能
 
