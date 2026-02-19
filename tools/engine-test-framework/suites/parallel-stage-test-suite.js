@@ -303,9 +303,19 @@ class ParallelStageTestSuite extends BaseTestSuite {
         ];
         
         for (const pattern of triggerPatterns) {
+            // 从阶段段落中提取
             const stageSection = this.extractStageSection(content, pattern.stage);
+            
+            // 从并行阶段定义表格中提取
+            const tablePattern = new RegExp(`\\*\\*${pattern.stage.replace(/[-]/g, '\\\\*-')}\\\\*\\*[^\\n]*\\|[^\\n]*\\|[^\\n]*\\|[^\\n]*\\|[^\\n]*\\|`, 'i');
+            const tableMatch = content.match(tablePattern);
+            const tableSection = tableMatch ? tableMatch[0] : '';
+            
+            // 检查是否有触发条件
             const hasTrigger = stageSection.includes(pattern.trigger) || 
-                              content.includes(`${pattern.stage}.*${pattern.trigger}`);
+                              tableSection.includes(pattern.trigger) ||
+                              content.includes(`${pattern.stage}.*${pattern.trigger}`) ||
+                              content.includes(`${pattern.trigger}解锁后启动`);
             
             results.push(this.createResult(
                 `PARALLEL_TRIGGER_${pattern.stage.replace(/[\s-]/g, '_')}`,

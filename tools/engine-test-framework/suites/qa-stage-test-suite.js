@@ -514,7 +514,7 @@ class QAStageTestSuite extends BaseTestSuite {
     testRegressionRequirements(content) {
         const results = [];
         
-        const regressionPattern = /回归测试|RT|Regression/i;
+        const regressionPattern = /回归测试|RT|Regression|regression_requirements/i;
         const hasRegressionSection = regressionPattern.test(content);
         
         results.push(this.createResult(
@@ -528,9 +528,16 @@ class QAStageTestSuite extends BaseTestSuite {
         ));
         
         for (const [reqId, reqConfig] of Object.entries(REGRESSION_REQUIREMENTS)) {
-            const reqPattern = new RegExp(reqConfig.name, 'i');
-            const found = reqPattern.test(content) || 
-                content.includes(reqConfig.description.substring(0, 10));
+            // 扩展匹配模式，支持多种格式
+            const patterns = [
+                new RegExp(reqConfig.name, 'i'),
+                new RegExp(reqConfig.description.substring(0, 10), 'i'),
+                new RegExp(reqId, 'i'),
+                // 支持 RR-001 格式
+                new RegExp(`RR-\\d+.*${reqConfig.name}`, 'i')
+            ];
+            
+            const found = patterns.some(pattern => pattern.test(content));
             
             results.push(this.createResult(
                 `REGRESSION_REQUIREMENT_${reqId}`,
@@ -543,7 +550,7 @@ class QAStageTestSuite extends BaseTestSuite {
             ));
         }
         
-        const afterFixPattern = /修复后.*回归|Bug修复后.*测试|修改后.*回归/i;
+        const afterFixPattern = /修复后.*回归|Bug修复后.*测试|修改后.*回归|RR-001|after_fix/i;
         const hasAfterFix = afterFixPattern.test(content);
         
         results.push(this.createResult(

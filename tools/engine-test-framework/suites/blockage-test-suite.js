@@ -287,9 +287,24 @@ class BlockageTestSuite extends BaseTestSuite {
     }
     
     extractBpSection(content, bpId) {
-        const pattern = new RegExp(`${bpId}[\\s\\S]{0,300}`, 'i');
-        const match = content.match(pattern);
-        return match ? match[0] : null;
+        // 首先尝试从阻塞点定义章节提取
+        const definitionPattern = new RegExp(`####\\s*${bpId}[^]*?(?=####|###|$)`, 'i');
+        const definitionMatch = content.match(definitionPattern);
+        if (definitionMatch) {
+            return definitionMatch[0];
+        }
+        
+        // 其次尝试从流程图中提取
+        const flowPattern = new RegExp(`${bpId}[\\s\\S]{0,500}`, 'i');
+        const flowMatch = content.match(flowPattern);
+        if (flowMatch) {
+            return flowMatch[0];
+        }
+        
+        // 最后尝试从阻塞点总览表格提取
+        const tablePattern = new RegExp(`\\*\\*${bpId}\\*\\*[^\\n]*\\|[^\\n]*\\|[^\\n]*\\|[^\\n]*\\|`, 'i');
+        const tableMatch = content.match(tablePattern);
+        return tableMatch ? tableMatch[0] : null;
     }
     
     testBlockageInFlow(content) {
