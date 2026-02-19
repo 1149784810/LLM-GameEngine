@@ -25,6 +25,12 @@ tmp/
 temp/
 *.tmp
 
+# 项目目录
+projects/
+
+# 临时目录
+temp/
+
 # 构建输出
 dist/
 build/
