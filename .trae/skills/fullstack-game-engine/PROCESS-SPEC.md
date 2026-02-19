@@ -73,7 +73,7 @@
 ├─────────────────────────────────────────────────────────────────────────────┤
 │ [R] PL → LD (game-lead-designer)                                             │
 │ [P] REQ-CLARIFIED-[YYYYMMDD].md                                              │
-│ [O] REQ-SPLIT-[YYYYMMDD]-v1.0.md (需求拆分文档)                               │
+│ [O] LD-REQ-SPLIT-v1.0-[YYYYMMDD].md (需求拆分文档)                            │
 │                                                                               │
 │ 拆分模块:                                                                      │
 │ ├─ M001: 核心玩法机制 (→ SD-1)                                                │
@@ -100,77 +100,77 @@
 │ [R] PL 并行调度:                                                              │
 │                                                                               │
 │ ├─→ [R] SD-1: 核心玩法机制设计                                                │
-│ │   [P] REQ-SPLIT-[YYYYMMDD]-v1.0.md, LD-TODOLIST-SD-1-v1.0-[YYYYMMDD].md    │
+│ │   [P] LD-REQ-SPLIT-v1.0-[YYYYMMDD].md, LD-TODOLIST-SD-1-v1.0-[YYYYMMDD].md │
 │ │   [O] SD-GAMEPLAY-[YYYYMMDD].md                                             │
 │ │   负责系统: {核心战斗循环, 回合制规则}                                       │
 │ │
 │ ├─→ [R] SD-2: 系统规则设计                                                    │
-│ │   [P] REQ-SPLIT-[YYYYMMDD]-v1.0.md, LD-TODOLIST-SD-2-v1.0-[YYYYMMDD].md    │
+│ │   [P] LD-REQ-SPLIT-v1.0-[YYYYMMDD].md, LD-TODOLIST-SD-2-v1.0-[YYYYMMDD].md │
 │ │   [O] SD-RULES-[YYYYMMDD].md                                                │
 │ │   负责系统: {装备系统规则, 道具使用规则}                                     │
 │ │
 │ ├─→ [R] UID: UI/UX设计                                                        │
-│ │   [P] REQ-SPLIT-[YYYYMMDD]-v1.0.md, LD-TODOLIST-UID-v1.0-[YYYYMMDD].md     │
+│ │   [P] LD-REQ-SPLIT-v1.0-[YYYYMMDD].md, LD-TODOLIST-UID-v1.0-[YYYYMMDD].md  │
 │ │   [O] UID-LAYOUT-[YYYYMMDD].md                                              │
 │ │   负责系统: {HUD界面, 交互流程}                                              │
 │ │
 │ ├─→ [R] BD-1: 经济系统设计                                                    │
-│ │   [P] REQ-SPLIT-[YYYYMMDD]-v1.0.md, LD-TODOLIST-BD-1-v1.0-[YYYYMMDD].md    │
+│ │   [P] LD-REQ-SPLIT-v1.0-[YYYYMMDD].md, LD-TODOLIST-BD-1-v1.0-[YYYYMMDD].md │
 │ │   [O] BD-ECONOMY-[YYYYMMDD].md                                              │
 │ │   负责系统: {金币掉落, 商店价格}                                             │
 │ │
 │ ├─→ [R] BD-2: 战斗数值平衡                                                    │
-│ │   [P] REQ-SPLIT-[YYYYMMDD]-v1.0.md, LD-TODOLIST-BD-2-v1.0-[YYYYMMDD].md    │
+│ │   [P] LD-REQ-SPLIT-v1.0-[YYYYMMDD].md, LD-TODOLIST-BD-2-v1.0-[YYYYMMDD].md │
 │ │   [O] BD-COMBAT-[YYYYMMDD].md                                               │
 │ │   负责系统: {角色属性, 技能伤害}                                             │
 │ │
 │ ├─→ [R] LvD-1: 关卡设计                                                       │
-│ │   [P] REQ-SPLIT-[YYYYMMDD]-v1.0.md, LD-TODOLIST-LvD-1-v1.0-[YYYYMMDD].md   │
+│ │   [P] LD-REQ-SPLIT-v1.0-[YYYYMMDD].md, LD-TODOLIST-LvD-1-v1.0-[YYYYMMDD].md│
 │ │   [O] LvD-LEVELS-[YYYYMMDD].md                                              │
 │ │   负责系统: {副本1设计, 副本2设计}                                           │
 │ │
 │ ├─→ [R] LvD-2: 地图布局                                                       │
-│ │   [P] REQ-SPLIT-[YYYYMMDD]-v1.0.md, LD-TODOLIST-LvD-2-v1.0-[YYYYMMDD].md   │
+│ │   [P] LD-REQ-SPLIT-v1.0-[YYYYMMDD].md, LD-TODOLIST-LvD-2-v1.0-[YYYYMMDD].md│
 │ │   [O] LvD-MAP-[YYYYMMDD].md                                                 │
 │ │   负责系统: {主城布局, 野外地图}                                             │
 │ │
 │ ├─→ [R] CD-1: 战斗机制设计                                                    │
-│ │   [P] REQ-SPLIT-[YYYYMMDD]-v1.0.md, LD-TODOLIST-CD-1-v1.0-[YYYYMMDD].md    │
+│ │   [P] LD-REQ-SPLIT-v1.0-[YYYYMMDD].md, LD-TODOLIST-CD-1-v1.0-[YYYYMMDD].md │
 │ │   [O] CD-MECHANICS-[YYYYMMDD].md                                            │
 │ │   负责系统: {回合制流程, 技能释放机制}                                       │
 │ │
 │ ├─→ [R] CD-2: 敌人行为设计                                                    │
-│ │   [P] REQ-SPLIT-[YYYYMMDD]-v1.0.md, LD-TODOLIST-CD-2-v1.0-[YYYYMMDD].md    │
+│ │   [P] LD-REQ-SPLIT-v1.0-[YYYYMMDD].md, LD-TODOLIST-CD-2-v1.0-[YYYYMMDD].md │
 │ │   [O] CD-ENEMY-[YYYYMMDD].md                                                │
 │ │   负责系统: {BOSS AI, 小怪行为}                                              │
 │ │
 │ ├─→ [R] 3CD-1: 相机设计                                                       │
-│ │   [P] REQ-SPLIT-[YYYYMMDD]-v1.0.md, LD-TODOLIST-3CD-1-v1.0-[YYYYMMDD].md   │
+│ │   [P] LD-REQ-SPLIT-v1.0-[YYYYMMDD].md, LD-TODOLIST-3CD-1-v1.0-[YYYYMMDD].md│
 │ │   [O] 3CD-CAMERA-[YYYYMMDD].md                                              │
 │ │   负责系统: {战斗相机, 探索相机}                                             │
 │ │
 │ ├─→ [R] 3CD-2: 角色控制器设计                                                 │
-│ │   [P] REQ-SPLIT-[YYYYMMDD]-v1.0.md, LD-TODOLIST-3CD-2-v1.0-[YYYYMMDD].md   │
+│ │   [P] LD-REQ-SPLIT-v1.0-[YYYYMMDD].md, LD-TODOLIST-3CD-2-v1.0-[YYYYMMDD].md│
 │ │   [O] 3CD-CHARACTER-[YYYYMMDD].md                                           │
 │ │   负责系统: {角色移动, 碰撞检测}                                             │
 │ │
 │ ├─→ [R] ND-1: 剧情设计                                                        │
-│ │   [P] REQ-SPLIT-[YYYYMMDD]-v1.0.md, LD-TODOLIST-ND-1-v1.0-[YYYYMMDD].md    │
+│ │   [P] LD-REQ-SPLIT-v1.0-[YYYYMMDD].md, LD-TODOLIST-ND-1-v1.0-[YYYYMMDD].md │
 │ │   [O] ND-STORY-[YYYYMMDD].md                                                │
 │ │   负责系统: {主线剧情, 世界观设定}                                           │
 │ │
 │ ├─→ [R] ND-2: 对话编写                                                        │
-│ │   [P] REQ-SPLIT-[YYYYMMDD]-v1.0.md, LD-TODOLIST-ND-2-v1.0-[YYYYMMDD].md    │
+│ │   [P] LD-REQ-SPLIT-v1.0-[YYYYMMDD].md, LD-TODOLIST-ND-2-v1.0-[YYYYMMDD].md │
 │ │   [O] ND-DIALOGUE-[YYYYMMDD].md                                             │
 │ │   负责系统: {NPC对话, 任务描述}                                              │
 │ │
 │ ├─→ [R] TD: 新手引导设计                                                      │
-│ │   [P] REQ-SPLIT-[YYYYMMDD]-v1.0.md, LD-TODOLIST-TD-v1.0-[YYYYMMDD].md      │
+│ │   [P] LD-REQ-SPLIT-v1.0-[YYYYMMDD].md, LD-TODOLIST-TD-v1.0-[YYYYMMDD].md   │
 │ │   [O] TD-TUTORIAL-[YYYYMMDD].md                                             │
 │ │   负责系统: {新手引导, 教学关卡}                                             │
 │ │
 │ └─→ [R] AD: 音频设计                                                          │
-│     [P] REQ-SPLIT-[YYYYMMDD]-v1.0.md, LD-TODOLIST-AD-v1.0-[YYYYMMDD].md      │
+│     [P] LD-REQ-SPLIT-v1.0-[YYYYMMDD].md, LD-TODOLIST-AD-v1.0-[YYYYMMDD].md   │
 │     [O] AD-AUDIO-[YYYYMMDD].md                                                │
 │     负责系统: {BGM, SFX}                                                       │
 │
@@ -459,14 +459,19 @@
 
 | 文档类型 | 命名格式 | 示例 |
 |---------|---------|------|
-| 需求拆分 | `REQ-SPLIT-[YYYYMMDD]-v[版本].md` | `REQ-SPLIT-20240219-v1.0.md` |
+| 需求拆分 | `LD-REQ-SPLIT-v[版本]-[YYYYMMDD].md` | `LD-REQ-SPLIT-v1.0-20240219.md` |
 | 子策划TodoList | `LD-TODOLIST-[标识]-v[版本]-[YYYYMMDD].md` | `LD-TODOLIST-SD-1-v1.0-20240219.md` |
 | 技术需求 | `LD-TECH-REQ-v[版本]-[YYYYMMDD].md` | `LD-TECH-REQ-v1.0-20240219.md` |
 | 子程序员TodoList | `LP-TODOLIST-[标识]-v[版本]-[YYYYMMDD].md` | `LP-TODOLIST-SkD-1-v1.0-20240219.md` |
 | 测试计划 | `LT-TEST-PLAN-v[版本]-[YYYYMMDD].md` | `LT-TEST-PLAN-v1.0-20240219.md` |
 | 测试报告 | `QA-TEST-REPORT-v[版本]-[YYYYMMDD].md` | `QA-TEST-REPORT-v1.0-20240219.md` |
 | Bug清单 | `QA-BUG-LIST-v[版本]-[YYYYMMDD].md` | `QA-BUG-LIST-v1.0-20240219.md` |
-| 最终交付 | `FINAL-DELIVERY-[YYYYMMDD].md` | `FINAL-DELIVERY-20240219.md` |
+| 最终交付 | `FINAL-DELIVERY-v[版本]-[YYYYMMDD].md` | `FINAL-DELIVERY-v1.0-20240219.md` |
+
+> **统一命名规则**：`[角色标识]-[文档类型]-v[版本]-[YYYYMMDD].md`
+> - 所有文档必须遵循此格式
+> - 版本号格式：`v主版本.次版本`（如 v1.0, v1.1, v2.0）
+> - 日期格式：`YYYYMMDD`（8位数字，如 20240219）
 
 ### 角色标识符规范
 
