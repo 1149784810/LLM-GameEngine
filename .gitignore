@@ -1,6 +1,3 @@
-# 项目文件
-projects/
-
 # 依赖
 node_modules/
 package-lock.json
@@ -24,9 +21,6 @@ Thumbs.db
 tmp/
 temp/
 *.tmp
-
-# 项目目录
-projects/
 
 # 临时目录
 temp/
