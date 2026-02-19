@@ -1,0 +1,109 @@
+{
+  "WindowTitle": "MyGame",
+  "ApplicationPath": "C:\\Games\\MyGame\\Game.exe",
+  "LogPath": "C:\\Games\\MyGame\\Logs\\Player.log",
+  "Paths": [
+    {
+      "Name": "NewPlayerFlow",
+      "Description": "新手引导完整流程",
+      "Steps": [
+        "Logo",
+        "MainMenu",
+        "CharacterCreate",
+        "Tutorial",
+        "MainCity"
+      ],
+      "Nodes": [
+        {
+          "Name": "Logo",
+          "Action": "Wait",
+          "ExpectedUI": "游戏Logo显示，有开始按钮"
+        },
+        {
+          "Name": "MainMenu",
+          "Action": "Click_StartGame",
+          "ExpectedUI": "主菜单界面，包含开始游戏、设置、退出按钮"
+        },
+        {
+          "Name": "CharacterCreate",
+          "Action": "Click_NewGame",
+          "ExpectedUI": "角色创建界面，可选择角色类型"
+        },
+        {
+          "Name": "Tutorial",
+          "Action": "Complete_Create",
+          "ExpectedUI": "新手教程界面，有引导提示"
+        },
+        {
+          "Name": "MainCity",
+          "Action": "Complete_Tutorial",
+          "ExpectedUI": "主城界面，可自由操作"
+        }
+      ]
+    },
+    {
+      "Name": "BattleFlow",
+      "Description": "战斗流程",
+      "Steps": [
+        "MainCity",
+        "LevelSelect",
+        "BattleScene",
+        "BattleResult"
+      ],
+      "Nodes": [
+        {
+          "Name": "MainCity",
+          "Action": "Click_Battle",
+          "ExpectedUI": "主城界面"
+        },
+        {
+          "Name": "LevelSelect",
+          "Action": "Select_Level",
+          "ExpectedUI": "关卡选择界面"
+        },
+        {
+          "Name": "BattleScene",
+          "Action": "Click_StartBattle",
+          "ExpectedUI": "战斗场景，角色和敌人可见"
+        },
+        {
+          "Name": "BattleResult",
+          "Action": "Battle_End",
+          "ExpectedUI": "战斗结算界面，显示奖励"
+        }
+      ]
+    },
+    {
+      "Name": "SettingsFlow",
+      "Description": "设置菜单流程",
+      "Steps": [
+        "MainMenu",
+        "Settings",
+        "AudioSettings",
+        "GraphicsSettings"
+      ],
+      "Nodes": [
+        {
+          "Name": "MainMenu",
+          "Action": "Click_Settings",
+          "ExpectedUI": "主菜单界面"
+        },
+        {
+          "Name": "Settings",
+          "Action": "None",
+          "ExpectedUI": "设置主界面"
+        },
+        {
+          "Name": "AudioSettings",
+          "Action": "Click_Audio",
+          "ExpectedUI": "音频设置界面"
+        },
+        {
+          "Name": "GraphicsSettings",
+          "Action": "Click_Graphics",
+          "ExpectedUI": "图形设置界面"
+        }
+      ]
+    }
+  ]
+}
