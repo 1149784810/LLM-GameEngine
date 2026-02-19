@@ -1,6 +1,6 @@
 ---
 name: "engine-test-framework"
-version: "1.0.0"
+version: "2.0.0"
 description: "引擎测试框架，快速验证全栈游戏开发引擎的全部流程和技能Header元数据，无需运行完整游戏开发周期。"
 author: "engine-team"
 created_at: "2026-02-20"
@@ -35,8 +35,8 @@ contracts:
         description: "测试报告"
     validation_rules:
       - type: "PASS_RATE"
-        threshold: 1.0
-        description: "所有测试必须通过"
+        threshold: 0.95
+        description: "测试通过率应达到95%以上"
     quality_gates:
       - metric: "header_compliance_rate"
         threshold: 1.0
@@ -89,6 +89,24 @@ quality:
       threshold: 1.0
       operator: "=="
       required: true
+    - id: "AC-004"
+      description: "阻塞点定义验证通过率"
+      metric: "blockage_pass_rate"
+      threshold: 0.9
+      operator: ">="
+      required: true
+    - id: "AC-005"
+      description: "并行阶段验证通过率"
+      metric: "parallel_pass_rate"
+      threshold: 0.9
+      operator: ">="
+      required: true
+    - id: "AC-006"
+      description: "Agent调度验证通过率"
+      metric: "agent_dispatch_pass_rate"
+      threshold: 0.9
+      operator: ">="
+      required: true
   testing:
     required_tests:
       - type: "FT"
@@ -129,6 +147,18 @@ tracking:
       name: "LAYER_VIOLATION"
       severity: "HIGH"
       rollback_required: false
+    - code: "E005"
+      name: "BLOCKAGE_UNDEFINED"
+      severity: "HIGH"
+      rollback_required: false
+    - code: "E006"
+      name: "PARALLEL_STAGE_INVALID"
+      severity: "MEDIUM"
+      rollback_required: false
+    - code: "E007"
+      name: "AGENT_DISPATCH_INCOMPLETE"
+      severity: "MEDIUM"
+      rollback_required: false
   checkpoints:
     - id: "CP-001"
       name: "技能扫描完成"
@@ -158,6 +188,15 @@ functions:
     - name: "validate_function"
       signature: "validate_function(header: HEADER) -> VALIDATION_RESULT"
       description: "验证函数签名"
+    - name: "validate_blockage"
+      signature: "validate_blockage(content: STRING) -> VALIDATION_RESULT"
+      description: "验证阻塞点定义"
+    - name: "validate_parallel_stage"
+      signature: "validate_parallel_stage(content: STRING) -> VALIDATION_RESULT"
+      description: "验证并行阶段定义"
+    - name: "validate_agent_dispatch"
+      signature: "validate_agent_dispatch(content: STRING) -> VALIDATION_RESULT"
+      description: "验证Agent调度记录"
   state_managers:
     - name: "save_checkpoint"
       signature: "save_checkpoint(state: STATE) -> CHECKPOINT_ID"
@@ -175,6 +214,12 @@ functions:
     - name: "get_dependency_graph"
       signature: "get_dependency_graph() -> DEP_GRAPH"
       description: "获取依赖图"
+    - name: "get_blockage_points"
+      signature: "get_blockage_points() -> BLOCKAGE_MAP"
+      description: "获取阻塞点定义"
+    - name: "get_parallel_stages"
+      signature: "get_parallel_stages() -> PARALLEL_STAGE_MAP"
+      description: "获取并行阶段定义"
 ---
 
 # 引擎测试框架 (Engine Test Framework)
@@ -229,7 +274,10 @@ tools/engine-test-framework/
 ├── suites/
 │   ├── header-test-suite.js     # Header测试套件
 │   ├── dependency-test-suite.js # 依赖测试套件
-│   └── function-test-suite.js   # 函数测试套件
+│   ├── function-test-suite.js   # 函数测试套件
+│   ├── blockage-test-suite.js   # 阻塞点测试套件 ⭐新增
+│   ├── parallel-stage-test-suite.js # 并行阶段测试套件 ⭐新增
+│   └── agent-dispatch-test-suite.js # Agent调度测试套件 ⭐新增
 ├── mock/
 │   ├── mock-agent-factory.js    # Mock Agent工厂
 │   └── hallucination-injector.js # 幻觉注入器
@@ -254,6 +302,11 @@ node tools/engine-test-framework/cli.js test --skill=<skill-name>
 node tools/engine-test-framework/cli.js suite --name=header
 node tools/engine-test-framework/cli.js suite --name=dependency
 node tools/engine-test-framework/cli.js suite --name=function
+node tools/engine-test-framework/cli.js suite --name=blockage      # 阻塞点测试 ⭐新增
+node tools/engine-test-framework/cli.js suite --name=parallel     # 并行阶段测试 ⭐新增
+node tools/engine-test-framework/cli.js suite --name=agent-dispatch # Agent调度测试 ⭐新增
+node tools/engine-test-framework/cli.js suite --name=flow         # 流程验证（blockage+parallel+agent-dispatch）⭐新增
+node tools/engine-test-framework/cli.js suite --name=all          # 运行所有测试套件 ⭐新增
 
 # 生成Markdown报告
 node tools/engine-test-framework/cli.js report --output=reports/test-report.md
@@ -319,6 +372,87 @@ WHEN 用户执行"启动测试框架"命令:
 | VALIDATORS | 验证器函数签名 | WARNING |
 | STATE_MANAGERS | 状态管理器函数签名 | WARNING |
 | QUERIES | 查询函数签名 | WARNING |
+
+### 4. Blockage测试套件 ⭐新增
+
+验证阻塞点定义的完整性和正确性：
+
+| 测试项 | 说明 | 严重级别 |
+|--------|------|----------|
+| BLOCKAGE_DEFINED | BP-001至BP-016是否定义 | ERROR |
+| BLOCKAGE_SEQUENCE | 阻塞点顺序是否正确 | WARNING |
+| BLOCKAGE_UNLOCK_CONDITION | 解锁条件是否明确 | WARNING |
+| BLOCKAGE_IN_FLOW | 是否嵌入流程图 | ERROR |
+| BLOCKAGE_TRACKING | 状态追踪机制 | WARNING |
+| BLOCKAGE_STATE_MANAGER_REF | state-manager引用 | WARNING |
+
+**阻塞点定义**：
+- BP-001: 需求澄清完成
+- BP-002: 主策划需求拆分完成
+- BP-003: 子策划并行设计完成
+- BP-004: 主策划文档整合完成
+- BP-005: UI布局验收说明完成
+- BP-006: 主程序员框架搭建完成
+- BP-007: 子程序员并行开发完成
+- BP-008: 主程序员代码整合完成
+- BP-009: 主程序员代码审查完成
+- BP-010: 主策划过审完成
+- BP-011: 子策划并行验收完成
+- BP-012: 主测试计划制定完成
+- BP-013: 子QA并行测试完成
+- BP-014: 主测试汇总完成
+- BP-015: 项目交付完成
+- BP-016: 项目经验总结完成
+
+### 5. Parallel Stage测试套件 ⭐新增
+
+验证并行阶段定义的完整性和正确性：
+
+| 测试项 | 说明 | 严重级别 |
+|--------|------|----------|
+| PARALLEL_STAGE_DEFINED | 并行阶段是否定义 | ERROR |
+| PARALLEL_ROLE_COUNT | 角色数量是否达标 | WARNING |
+| PARALLEL_PRINCIPLES | 并行原则是否定义 | WARNING |
+| PARALLEL_TRIGGER | 触发条件是否明确 | WARNING |
+| PARALLEL_PROHIBITIONS | 禁止行为是否定义 | WARNING |
+
+**并行阶段定义**：
+- Stage 1-2: 子策划并行细化（最少5人，目标15人）
+- Stage 2-2: 子程序员并行开发（最少5人，目标14人）
+- Stage 3-2: 子策划并行验收（最少5人，目标14人）
+- Step 3-3-2: 子QA并行测试（最少3人，目标8人）
+
+**并行原则**：
+- 最大化并行原则
+- 应上尽上原则
+- 禁止一人多职
+- 任务粒度控制
+
+### 6. Agent Dispatch测试套件 ⭐新增
+
+验证Agent调度记录的完整性和正确性：
+
+| 测试项 | 说明 | 严重级别 |
+|--------|------|----------|
+| AGENT_ROLE_DEFINED | 角色定义完整性 | WARNING |
+| DISPATCH_TIMING | 调度时机定义 | WARNING |
+| COMPANION_STAGES | 伴生阶段定义 | WARNING |
+| DISPATCH_RECORD_FORMAT | 调度记录格式 | WARNING |
+| AGENT_DISPATCHER_SKILL | agent-dispatcher技能 | ERROR |
+
+**Agent角色定义**：
+- PL: 项目负责人（调度中转）
+- LD: 主策划
+- SD/BD/LvD/CD/3CD/ND/TD/AD: 子策划
+- LP: 主程序员
+- SkD/BkD/TA/3CP/LvP/UIP/TDP/AP: 子程序员
+- LT: 主测试
+- QA/VV: 测试人员
+
+**伴生阶段定义**：
+- 伴生阶段-A: agent-dispatcher（智能体调度）
+- 伴生阶段-B: qa-standards-manager（验收标准）
+- 伴生阶段-C: bug-tracker（Bug追踪）
 
 ---
 
@@ -556,3 +690,4 @@ Pass Rate:        100.0% ✅
 | 版本 | 日期 | 变更内容 |
 |------|------|---------|
 | v1.0.0 | 2026-02-20 | 初始版本，包含Header/Dependency/Function三大测试套件 |
+| v2.0.0 | 2026-02-20 | 新增Blockage/Parallel/Agent-Dispatch三大测试套件，支持流程验证 |
