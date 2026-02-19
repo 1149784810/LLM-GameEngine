@@ -1,6 +1,181 @@
 ---
 name: "qa-standards-manager"
+version: "1.1.0"
 description: "验收标准管理器，负责制定和管理游戏开发各阶段的验收标准、检查清单和质量门槛。测试标准的唯一权威来源，强制执行功能测试(FT)、视觉测试(VT)、回归测试(RT)。包含反幻觉机制，强制要求测试证据。"
+author: "engine-team"
+created_at: "2024-02-19"
+updated_at: "2026-02-20"
+
+layer: 3
+dependencies:
+  - name: "terminology-standard"
+    layer: 0
+    type: "required"
+    purpose: "术语标准引用"
+  - name: "fullstack-game-engine"
+    layer: 1
+    type: "required"
+    purpose: "流程定义引用"
+  - name: "contract-validator"
+    layer: 2
+    type: "required"
+    purpose: "契约验证集成"
+
+contracts:
+  input:
+    required_documents:
+      - pattern: "docs/02-策划文档/.*\\.md"
+        description: "策划设计文档"
+      - pattern: "docs/03-技术文档/.*\\.md"
+        description: "技术需求文档"
+  output:
+    required_documents:
+      - pattern: "docs/05-测试文档/QA-TEST-REPORT-.*\\.md"
+        schema: "qa-report-schema.json"
+        min_size: 4096
+        description: "QA测试报告"
+      - pattern: "tests/evidence/screenshots/.*\\.png"
+        description: "测试截图证据"
+    quality_gates:
+      - metric: "test_coverage"
+        threshold: 0.8
+        operator: ">="
+        required: true
+      - metric: "evidence_coverage"
+        threshold: 0.5
+        operator: ">="
+        required: true
+
+execution:
+  mode: "parallel"
+  preconditions:
+    - type: "BP_UNLOCKED"
+      target: "BP-009"
+      description: "Phase 3开发完成"
+  postconditions:
+    - type: "BP_UNLOCK"
+      target: "BP-011"
+      description: "解锁QA测试完成阻塞点"
+  rollback:
+    supported: true
+    strategy: "checkpoint"
+    rollback_point: "BP-009"
+    side_effects:
+      - "删除测试报告"
+      - "删除测试证据"
+    recovery_actions:
+      - action: "DELETE_ARTIFACTS"
+        target: "docs/05-测试文档/QA-TEST-REPORT-*.md"
+      - action: "DELETE_ARTIFACTS"
+        target: "tests/evidence/screenshots/*"
+
+quality:
+  acceptance_criteria:
+    - id: "AC-001"
+      description: "功能测试通过"
+      metric: "ft_pass_rate"
+      threshold: 1.0
+      operator: "=="
+      required: true
+    - id: "AC-002"
+      description: "视觉测试通过"
+      metric: "vt_pass_rate"
+      threshold: 1.0
+      operator: "=="
+      required: true
+    - id: "AC-003"
+      description: "完整路径测试通过"
+      metric: "fpt_pass_rate"
+      threshold: 1.0
+      operator: "=="
+      required: true
+    - id: "AC-004"
+      description: "无P0级Bug"
+      metric: "p0_bug_count"
+      threshold: 0
+      operator: "=="
+      required: true
+  testing:
+    required_tests:
+      - type: "FT"
+        description: "功能测试"
+        required: true
+      - type: "VT"
+        description: "视觉测试"
+        required: true
+      - type: "FPT"
+        description: "完整路径测试"
+        required: true
+      - type: "RT"
+        description: "回归测试"
+        required: true
+    evidence_required: true
+    anti_hallucination:
+      enabled: true
+      level: "LEVEL_2"
+      min_screenshots: 5
+      max_pass_rate: 0.95
+  review:
+    required: true
+    reviewer: "LD"
+    checklist:
+      - "功能测试完整性检查"
+      - "视觉测试完整性检查"
+      - "路径测试完整性检查"
+      - "证据真实性检查"
+
+tracking:
+  execution_status:
+    current: "PENDING"
+  error_codes:
+    - code: "E501"
+      name: "TEST_CASE_FAILED"
+      severity: "HIGH"
+      rollback_required: false
+    - code: "E504"
+      name: "TEST_EVIDENCE_INVALID"
+      severity: "CRITICAL"
+      rollback_required: true
+    - code: "E505"
+      name: "COVERAGE_INSUFFICIENT"
+      severity: "MEDIUM"
+      rollback_required: false
+  checkpoints:
+    - id: "CP-001"
+      name: "功能测试完成"
+      position: "after_ft"
+      rollback_supported: true
+    - id: "CP-002"
+      name: "视觉测试完成"
+      position: "after_vt"
+      rollback_supported: true
+    - id: "CP-003"
+      name: "路径测试完成"
+      position: "after_fpt"
+      rollback_supported: true
+
+functions:
+  main:
+    name: "execute_tests"
+    signature: "execute_tests(test_plan: TEST_PLAN) -> TEST_RESULT"
+    description: "执行测试计划"
+  validators:
+    - name: "validate_ft"
+      signature: "validate_ft(test_cases: [TEST_CASE]) -> VALIDATION_RESULT"
+      description: "验证功能测试"
+    - name: "validate_vt"
+      signature: "validate_vt(screenshots: [PATH]) -> VALIDATION_RESULT"
+      description: "验证视觉测试"
+    - name: "validate_fpt"
+      signature: "validate_fpt(paths: [PATH_SPEC]) -> VALIDATION_RESULT"
+      description: "验证完整路径测试"
+  queries:
+    - name: "get_acceptance_criteria"
+      signature: "get_acceptance_criteria(phase: PHASE) -> [ACCEPTANCE_CRITERIA]"
+      description: "获取验收标准"
+    - name: "get_test_checklist"
+      signature: "get_test_checklist(test_type: STRING) -> [CHECK_ITEM]"
+      description: "获取测试检查清单"
 ---
 
 # 验收标准管理器

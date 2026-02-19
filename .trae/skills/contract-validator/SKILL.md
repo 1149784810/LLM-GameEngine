@@ -1,6 +1,172 @@
 ---
 name: "contract-validator"
+version: "1.2.0"
 description: "契约验证器，负责定义和验证每个角色的输入输出契约。确保文档格式正确、内容完整，防止不合格输出流入下一阶段。包含反幻觉验证规则，强制QA角色提供测试证据。"
+author: "engine-team"
+created_at: "2024-02-19"
+updated_at: "2026-02-20"
+
+layer: 2
+dependencies:
+  - name: "terminology-standard"
+    layer: 0
+    type: "required"
+    purpose: "术语标准引用"
+  - name: "fullstack-game-engine"
+    layer: 1
+    type: "required"
+    purpose: "流程定义引用"
+  - name: "state-manager"
+    layer: 2
+    type: "required"
+    purpose: "状态管理集成"
+
+contracts:
+  input:
+    required_documents:
+      - pattern: "docs/01-需求文档/REQ-SPLIT-.*\\.md"
+        schema: "requirement-split-schema.json"
+        description: "需求拆分文档"
+      - pattern: "docs/05-测试文档/LT-TODOLIST-.*\\.md"
+        schema: "todolist-schema.json"
+        description: "LT生成的TodoList"
+    validation_rules:
+      - type: "SCHEMA_VALIDATION"
+        strict: true
+      - type: "CONTENT_CHECK"
+        pattern: "LD-TODOLIST|LT-TODOLIST"
+        description: "必须使用正确的TodoList作为参考"
+  output:
+    required_documents:
+      - pattern: "docs/05-测试文档/QA-TEST-REPORT-.*\\.md"
+        schema: "qa-report-schema.json"
+        min_size: 4096
+        description: "QA测试报告"
+    validation_rules:
+      - type: "WORD_COUNT"
+        min: 1000
+      - type: "EVIDENCE_VALIDATION"
+        evidence_type: "screenshot"
+        min_count: 5
+      - type: "ANTI_HALLUCINATION_CHECK"
+        indicators: ["PERFECT_PASS_RATE", "INSUFFICIENT_EVIDENCE", "MISSING_SCREENSHOTS"]
+    quality_gates:
+      - metric: "contract_pass_rate"
+        threshold: 1.0
+        operator: "=="
+        required: true
+
+execution:
+  mode: "blocking"
+  preconditions:
+    - type: "BP_UNLOCKED"
+      target: "BP-009"
+      description: "Phase 3开发完成"
+    - type: "ROLE_COMPLETED"
+      target: "ALL_PROGRAMMERS"
+      description: "所有程序开发完成"
+  postconditions:
+    - type: "BP_UNLOCK"
+      target: "BP-011"
+      description: "解锁QA测试完成阻塞点"
+  rollback:
+    supported: true
+    strategy: "checkpoint"
+    rollback_point: "BP-009"
+    side_effects:
+      - "删除无效的测试报告"
+      - "重置QA角色状态"
+    recovery_actions:
+      - action: "DELETE_ARTIFACTS"
+        target: "docs/05-测试文档/QA-TEST-REPORT-*.md"
+      - action: "RESET_ROLE_STATUS"
+        target: "QA-*"
+        value: "PENDING"
+
+quality:
+  acceptance_criteria:
+    - id: "AC-001"
+      description: "契约验证通过率"
+      metric: "contract_pass_rate"
+      threshold: 1.0
+      operator: "=="
+      required: true
+    - id: "AC-002"
+      description: "证据覆盖率"
+      metric: "evidence_coverage"
+      threshold: 0.5
+      operator: ">="
+      required: true
+  testing:
+    required_tests:
+      - type: "FT"
+        description: "功能测试验证"
+        required: true
+      - type: "VT"
+        description: "视觉测试验证"
+        required: true
+    evidence_required: true
+    anti_hallucination:
+      enabled: true
+      level: "LEVEL_2"
+      min_screenshots: 5
+      max_pass_rate: 0.95
+  review:
+    required: true
+    reviewer: "LT"
+    checklist:
+      - "测试证据完整性检查"
+      - "反幻觉指标检查"
+      - "TodoList引用正确性检查"
+
+tracking:
+  execution_status:
+    current: "PENDING"
+  error_codes:
+    - code: "E301"
+      name: "CONTRACT_VALIDATION_FAILED"
+      severity: "HIGH"
+      rollback_required: true
+    - code: "E304"
+      name: "ANTI_HALLUCINATION_FAILED"
+      severity: "CRITICAL"
+      rollback_required: true
+    - code: "E305"
+      name: "EVIDENCE_MISSING"
+      severity: "HIGH"
+      rollback_required: false
+  checkpoints:
+    - id: "CP-001"
+      name: "输入契约验证完成"
+      position: "after_input_validation"
+      rollback_supported: true
+    - id: "CP-002"
+      name: "反幻觉检查完成"
+      position: "after_anti_hallucination"
+      rollback_supported: true
+
+functions:
+  main:
+    name: "validate"
+    signature: "validate(role_id: ROLE_ID, artifacts: [PATH]) -> VALIDATION_RESULT"
+    description: "执行契约验证主逻辑"
+  validators:
+    - name: "validate_input"
+      signature: "validate_input(role_id: ROLE_ID, artifacts: [PATH]) -> VALIDATION_RESULT"
+      description: "验证输入契约"
+    - name: "validate_output"
+      signature: "validate_output(role_id: ROLE_ID, artifacts: [PATH], anti_hallucination: BOOL) -> VALIDATION_RESULT"
+      description: "验证输出契约（含反幻觉检查）"
+    - name: "validate_anti_hallucination"
+      signature: "validate_anti_hallucination(qa_report: PATH, evidence_dir: PATH) -> ANTI_HALLUCINATION_RESULT"
+      description: "执行反幻觉专项验证"
+  queries:
+    - name: "get_contract"
+      signature: "get_contract(role_id: ROLE_ID) -> CONTRACT"
+      description: "获取角色契约定义"
+    - name: "get_validation_status"
+      signature: "get_validation_status(role_id: ROLE_ID) -> VALIDATION_STATUS"
+      description: "获取验证状态"
 ---
 
 # 契约验证器
@@ -1371,9 +1537,262 @@ STATE.artifacts[artifact_path].validation = {
 
 ---
 
+## 输入验证规范 ⭐新增
+
+### 验证类型
+
+| 验证类型 | 说明 | 示例 |
+|---------|------|------|
+| **路径验证** | 防止路径遍历攻击 | `../../../etc/passwd` |
+| **命令验证** | 防止命令注入 | `; rm -rf /` |
+| **长度验证** | 防止DoS攻击 | 超长字符串 |
+| **格式验证** | 确保数据格式正确 | 文件名、日期格式 |
+| **内容验证** | 防止恶意内容 | XSS、SQL注入 |
+
+### 路径验证规则
+
+```typescript
+PATH_VALIDATION ::= {
+  // 允许的路径模式
+  allowed_patterns: [
+    "projects/*",           // 项目目录
+    ".trae/*",              // 引擎目录
+    "tools/*",              // 工具目录
+    "output/*",             // 输出目录
+    "temp/*"                // 临时目录
+  ],
+  
+  // 禁止的路径模式
+  blocked_patterns: [
+    "../",                  // 路径遍历
+    "..\\",                 // Windows路径遍历
+    "/etc/*",               // 系统目录
+    "C:/Windows/*",         // Windows系统目录
+    "~/*",                  // 用户目录
+    "${*",                  // 环境变量注入
+    "%*"                    // Windows环境变量
+  ],
+  
+  // 验证函数
+  validate_path(path: STRING) → VALIDATION_RESULT {
+    // 1. 检查路径遍历
+    if (path.contains("../") || path.contains("..\\")) {
+      return { valid: false, error: "PATH_TRAVERSAL_DETECTED" }
+    }
+    
+    // 2. 规范化路径
+    normalized = path.normalize()
+    
+    // 3. 检查是否在允许范围内
+    if (!normalized.starts_with(allowed_patterns)) {
+      return { valid: false, error: "PATH_NOT_ALLOWED" }
+    }
+    
+    return { valid: true }
+  }
+}
+```
+
+### 命令验证规则
+
+```typescript
+COMMAND_VALIDATION ::= {
+  // 危险命令模式
+  dangerous_patterns: [
+    ";",                    // 命令分隔
+    "|",                    // 管道
+    "&",                    // 后台执行
+    "$(",                   // 命令替换
+    "`",                    // 反引号执行
+    ">",                    // 输出重定向
+    ">>",                   // 追加重定向
+    "<",                    // 输入重定向
+    "&&",                   // 逻辑与
+    "||"                    // 逻辑或
+  ],
+  
+  // 允许的命令白名单
+  allowed_commands: [
+    "npm", "yarn", "pnpm", "npx",
+    "git", "node", "python",
+    "tsc", "webpack", "vite",
+    "mkdir", "copy", "move"
+  ],
+  
+  // 验证函数
+  validate_command(cmd: STRING) → VALIDATION_RESULT {
+    // 1. 检查危险模式
+    for (pattern in dangerous_patterns) {
+      if (cmd.contains(pattern)) {
+        return { valid: false, error: "DANGEROUS_PATTERN_DETECTED", pattern }
+      }
+    }
+    
+    // 2. 提取命令名
+    cmd_name = cmd.split(" ")[0]
+    
+    // 3. 检查白名单
+    if (cmd_name not in allowed_commands) {
+      return { valid: false, error: "COMMAND_NOT_IN_WHITELIST", cmd_name }
+    }
+    
+    return { valid: true }
+  }
+}
+```
+
+### 长度验证规则
+
+```typescript
+LENGTH_VALIDATION ::= {
+  // 各类输入的最大长度
+  max_lengths: {
+    file_name: 255,         // 文件名
+    file_path: 4096,        // 文件路径
+    document_content: 1000000,  // 文档内容（1MB）
+    command_args: 8192,     // 命令参数
+    user_input: 10000,      // 用户输入
+    skill_description: 200  // 技能描述
+  },
+  
+  // 验证函数
+  validate_length(input: STRING, type: STRING) → VALIDATION_RESULT {
+    max = max_lengths[type]
+    if (input.length > max) {
+      return { 
+        valid: false, 
+        error: "INPUT_TOO_LONG",
+        actual: input.length,
+        max: max
+      }
+    }
+    return { valid: true }
+  }
+}
+```
+
+### 格式验证规则
+
+```typescript
+FORMAT_VALIDATION ::= {
+  // 文档命名格式
+  document_naming: {
+    pattern: "^[A-Z]+-[A-Z0-9-]+-v\\d+\\.\\d+-\\d{8}\\.md$",
+    example: "SD-GAMEPLAY-v1.0-20240219.md"
+  },
+  
+  // 日期格式
+  date_format: {
+    pattern: "^\\d{4}-\\d{2}-\\d{2}$",
+    example: "2024-02-19"
+  },
+  
+  // 版本格式
+  version_format: {
+    pattern: "^v\\d+\\.\\d+$",
+    example: "v1.0"
+  },
+  
+  // 角色ID格式
+  role_id_format: {
+    pattern: "^[A-Z]+-?\\d*$",
+    examples: ["PL", "LD", "SD-1", "QA-3"]
+  }
+}
+```
+
+### 内容验证规则
+
+```typescript
+CONTENT_VALIDATION ::= {
+  // XSS防护
+  xss_patterns: [
+    "<script",
+    "javascript:",
+    "onerror=",
+    "onload=",
+    "<iframe"
+  ],
+  
+  // SQL注入防护
+  sql_injection_patterns: [
+    "' OR '1'='1",
+    "'; DROP TABLE",
+    "--",
+    "/*",
+    "*/"
+  ],
+  
+  // 验证函数
+  validate_content(content: STRING) → VALIDATION_RESULT {
+    // 1. XSS检查
+    for (pattern in xss_patterns) {
+      if (content.lower().contains(pattern)) {
+        return { valid: false, error: "XSS_PATTERN_DETECTED", pattern }
+      }
+    }
+    
+    // 2. SQL注入检查
+    for (pattern in sql_injection_patterns) {
+      if (content.contains(pattern)) {
+        return { valid: false, error: "SQL_INJECTION_DETECTED", pattern }
+      }
+    }
+    
+    return { valid: true }
+  }
+}
+```
+
+### 综合验证接口
+
+```typescript
+FUNCTION: validate_all_inputs(
+  inputs: {
+    paths: [STRING],
+    commands: [STRING],
+    content: STRING,
+    metadata: OBJECT
+  }
+) → COMPREHENSIVE_VALIDATION_RESULT
+
+COMPREHENSIVE_VALIDATION_RESULT ::= {
+  valid: BOOL,
+  path_validation: VALIDATION_RESULT,
+  command_validation: VALIDATION_RESULT,
+  length_validation: VALIDATION_RESULT,
+  format_validation: VALIDATION_RESULT,
+  content_validation: VALIDATION_RESULT,
+  errors: [VALIDATION_ERROR],
+  warnings: [VALIDATION_WARNING]
+}
+
+示例:
+  PL → contract-validator.validate_all_inputs({
+    paths: ["projects/game/docs/test.md"],
+    commands: ["npm run build"],
+    content: "# Game Design Document",
+    metadata: { version: "v1.0", date: "2024-02-19" }
+  })
+  
+  返回: {
+    valid: true,
+    path_validation: { valid: true },
+    command_validation: { valid: true },
+    length_validation: { valid: true },
+    format_validation: { valid: true },
+    content_validation: { valid: true },
+    errors: [],
+    warnings: []
+  }
+```
+
+---
+
 ## 版本记录
 
 | 版本 | 日期 | 变更内容 |
 |------|------|---------|
 | v1.0 | 2024-02-19 | 初始版本，支持完整契约验证 |
 | v1.1 | 2026-02-19 | 增加反幻觉验证机制，新增QA-TESTER角色契约 |
+| v1.2 | 2026-02-20 | 增加输入验证规范（路径、命令、长度、格式、内容验证） |

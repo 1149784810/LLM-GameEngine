@@ -1,10 +1,74 @@
 ---
 name: "phase-stage-guard"
+version: "1.0.0"
 description: "流程阶段守卫，强制执行Stage顺序检查，防止跳过阶段。在每个Stage开始前必须调用，验证阻塞点状态和前置条件。"
+author: "engine-team"
+created_at: "2026-02-20"
+updated_at: "2026-02-20"
+
+layer: 3
 dependencies:
-  - fullstack-game-engine
-  - state-manager
-layer: 1
+  - name: "fullstack-game-engine"
+    layer: 1
+    type: "required"
+    purpose: "流程定义引用"
+  - name: "state-manager"
+    layer: 2
+    type: "required"
+    purpose: "状态管理"
+
+contracts:
+  input:
+    required_documents: []
+  output:
+    required_documents: []
+
+execution:
+  mode: "blocking"
+  preconditions: []
+  postconditions: []
+  rollback:
+    supported: false
+
+quality:
+  acceptance_criteria:
+    - id: "AC-001"
+      description: "阶段顺序正确"
+      metric: "stage_order_valid"
+      threshold: 1.0
+      operator: "=="
+      required: true
+  testing:
+    required_tests: []
+    evidence_required: false
+
+tracking:
+  execution_status:
+    current: "PENDING"
+  error_codes:
+    - code: "E201"
+      name: "PHASE_TRANSITION_FAILED"
+      severity: "HIGH"
+      rollback_required: false
+    - code: "E202"
+      name: "BLOCKING_POINT_LOCKED"
+      severity: "MEDIUM"
+      rollback_required: false
+  checkpoints: []
+
+functions:
+  main:
+    name: "check_stage"
+    signature: "check_stage(current_stage: STRING, target_stage: STRING) -> CHECK_RESULT"
+    description: "检查是否可以从当前阶段进入目标阶段"
+  validators:
+    - name: "validate_parallel_stage"
+      signature: "validate_parallel_stage(stage: STRING, roles: [ROLE_ID]) -> VALIDATION_RESULT"
+      description: "验证并行阶段是否满足要求"
+  queries:
+    - name: "check_blocking_point"
+      signature: "check_blocking_point(bp_id: STRING) -> { unlocked: BOOL }"
+      description: "检查阻塞点是否已解锁"
 ---
 
 # 流程阶段守卫

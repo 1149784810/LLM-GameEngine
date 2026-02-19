@@ -1,6 +1,95 @@
 ---
 name: "state-manager"
+version: "1.1.0"
 description: "状态管理器，负责维护游戏开发流程的完整状态、历史记录和快照回滚。确保流程状态可追溯、可回滚、数据一致性。"
+author: "engine-team"
+created_at: "2024-02-19"
+updated_at: "2026-02-20"
+
+layer: 2
+dependencies:
+  - name: "terminology-standard"
+    layer: 0
+    type: "required"
+    purpose: "术语标准引用"
+  - name: "fullstack-game-engine"
+    layer: 1
+    type: "required"
+    purpose: "流程定义引用"
+  - name: "event-bus"
+    layer: 2
+    type: "required"
+    purpose: "事件总线集成"
+
+contracts:
+  input:
+    required_documents: []
+  output:
+    required_documents:
+      - pattern: "projects/.*/.state/state_.*\\.json"
+        description: "状态快照文件"
+
+execution:
+  mode: "blocking"
+  preconditions: []
+  postconditions: []
+  rollback:
+    supported: true
+    strategy: "checkpoint"
+    rollback_point: "previous_state"
+    side_effects:
+      - "删除当前状态之后的状态文件"
+      - "恢复到目标状态"
+    recovery_actions:
+      - action: "RESTORE_STATE"
+        target: "previous_state_id"
+
+quality:
+  acceptance_criteria:
+    - id: "AC-001"
+      description: "状态一致性"
+      metric: "state_consistency"
+      threshold: 1.0
+      operator: "=="
+      required: true
+  testing:
+    required_tests: []
+    evidence_required: false
+
+tracking:
+  execution_status:
+    current: "PENDING"
+  error_codes:
+    - code: "E003"
+      name: "STATE_RESTORE_FAILED"
+      severity: "HIGH"
+      rollback_required: true
+    - code: "E004"
+      name: "STATE_CORRUPTED"
+      severity: "CRITICAL"
+      rollback_required: true
+  checkpoints:
+    - id: "CP-001"
+      name: "状态保存完成"
+      position: "after_save"
+      rollback_supported: true
+
+functions:
+  main:
+    name: "save_checkpoint"
+    signature: "save_checkpoint(state: STATE, name: STRING) -> STATE"
+    description: "保存状态检查点"
+  state_managers:
+    - name: "initialize_state"
+      signature: "initialize_state(project_name: STRING) -> STATE"
+      description: "初始化项目状态"
+    - name: "rollback_to"
+      signature: "rollback_to(state_id: UUID) -> ROLLBACK_RESULT"
+      description: "回滚到指定状态"
+  queries:
+    - name: "get_state_history"
+      signature: "get_state_history(filter: FILTER) -> [STATE_SUMMARY]"
+      description: "获取状态历史"
 ---
 
 # 状态管理器

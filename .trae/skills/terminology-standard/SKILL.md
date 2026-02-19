@@ -1,6 +1,48 @@
 ---
 name: "terminology-standard"
+version: "1.0.0"
 description: "全栈游戏开发术语标准库，定义所有技能必须使用的一致术语、符号系统和命名规范。所有技能开发或更新时必须首先查阅此技能确保术语一致性。"
+author: "engine-team"
+created_at: "2024-02-19"
+updated_at: "2026-02-20"
+
+layer: 0
+dependencies: []
+
+contracts:
+  input:
+    required_documents: []
+  output:
+    required_documents: []
+
+execution:
+  mode: "blocking"
+  preconditions: []
+  postconditions: []
+  rollback:
+    supported: false
+
+quality:
+  acceptance_criteria: []
+  testing:
+    required_tests: []
+    evidence_required: false
+
+tracking:
+  execution_status:
+    current: "PENDING"
+  error_codes: []
+  checkpoints: []
+
+functions:
+  main:
+    name: "get_term"
+    signature: "get_term(term_id: STRING) -> TERM_DEFINITION"
+    description: "获取术语定义"
+  queries:
+    - name: "validate_term"
+      signature: "validate_term(term: STRING) -> { valid: BOOL, standard: STRING }"
+      description: "验证术语是否符合标准"
 ---
 
 # 全栈游戏开发术语标准 (Terminology Standard)
@@ -295,7 +337,147 @@ Phase（阶段）→ Stage（子阶段）→ Step（步骤）
 
 ---
 
-## 八、技能开发检查清单
+## 八、错误码规范 ⭐新增
+
+### 8.1 错误码结构
+
+错误码格式：`E[分类][序号]`
+
+```
+E[分类][序号]
+ │  │
+ │  └─ 序号：001-999
+ └──── 分类：0-9
+```
+
+### 8.2 错误码分类
+
+| 分类 | 范围 | 说明 |
+|------|------|------|
+| E0xx | E001-E099 | 系统级错误 |
+| E1xx | E100-E199 | 技能调用错误 |
+| E2xx | E200-E299 | 流程执行错误 |
+| E3xx | E300-E399 | 验证失败错误 |
+| E4xx | E400-E499 | 文档处理错误 |
+| E5xx | E500-E599 | 测试相关错误 |
+| E6xx | E600-E699 | 安全相关错误 |
+| E7xx | E700-E799 | 网络通信错误 |
+| E8xx | E800-E899 | 资源相关错误 |
+| E9xx | E900-E999 | 用户输入错误 |
+
+### 8.3 详细错误码定义
+
+#### E0xx - 系统级错误
+
+| 错误码 | 名称 | 描述 | 处理建议 |
+|--------|------|------|---------|
+| E001 | SYSTEM_INIT_FAILED | 系统初始化失败 | 检查配置文件 |
+| E002 | SKILL_LOAD_FAILED | 技能加载失败 | 检查技能文件完整性 |
+| E003 | STATE_RESTORE_FAILED | 状态恢复失败 | 检查状态文件 |
+| E004 | CONFIG_MISSING | 配置缺失 | 补充必要配置 |
+| E005 | PERMISSION_DENIED | 权限不足 | 检查用户权限 |
+
+#### E1xx - 技能调用错误
+
+| 错误码 | 名称 | 描述 | 处理建议 |
+|--------|------|------|---------|
+| E101 | SKILL_NOT_FOUND | 技能不存在 | 检查技能名称 |
+| E102 | SKILL_DEPENDENCY_ERROR | 技能依赖错误 | 检查依赖关系 |
+| E103 | SKILL_VERSION_MISMATCH | 技能版本不匹配 | 更新技能版本 |
+| E104 | SKILL_EXECUTION_FAILED | 技能执行失败 | 查看详细日志 |
+| E105 | SKILL_TIMEOUT | 技能执行超时 | 优化执行效率 |
+
+#### E2xx - 流程执行错误
+
+| 错误码 | 名称 | 描述 | 处理建议 |
+|--------|------|------|---------|
+| E201 | PHASE_TRANSITION_FAILED | 阶段转换失败 | 检查阻塞点条件 |
+| E202 | BLOCKING_POINT_LOCKED | 阻塞点未解锁 | 完成前置条件 |
+| E203 | ROLE_ASSIGNMENT_FAILED | 角色分配失败 | 检查团队配置 |
+| E204 | PARALLEL_EXECUTION_ERROR | 并行执行错误 | 检查任务依赖 |
+| E205 | WORKFLOW_INTERRUPTED | 流程被中断 | 恢复或重启流程 |
+
+#### E3xx - 验证失败错误
+
+| 错误码 | 名称 | 描述 | 处理建议 |
+|--------|------|------|---------|
+| E301 | CONTRACT_VALIDATION_FAILED | 契约验证失败 | 检查输入输出格式 |
+| E302 | INPUT_VALIDATION_FAILED | 输入验证失败 | 检查输入内容 |
+| E303 | OUTPUT_VALIDATION_FAILED | 输出验证失败 | 检查输出格式 |
+| E304 | ANTI_HALLUCINATION_FAILED | 反幻觉验证失败 | 提供真实证据 |
+| E305 | EVIDENCE_MISSING | 证据缺失 | 补充测试证据 |
+
+#### E4xx - 文档处理错误
+
+| 错误码 | 名称 | 描述 | 处理建议 |
+|--------|------|------|---------|
+| E401 | DOCUMENT_NOT_FOUND | 文档不存在 | 创建必要文档 |
+| E402 | DOCUMENT_FORMAT_ERROR | 文档格式错误 | 修正文档格式 |
+| E403 | DOCUMENT_NAMING_ERROR | 文档命名错误 | 使用标准命名 |
+| E404 | DOCUMENT_VERSION_ERROR | 文档版本错误 | 更新文档版本 |
+| E405 | DOCUMENT_PARSE_FAILED | 文档解析失败 | 检查文档内容 |
+
+#### E5xx - 测试相关错误
+
+| 错误码 | 名称 | 描述 | 处理建议 |
+|--------|------|------|---------|
+| E501 | TEST_CASE_FAILED | 测试用例失败 | 修复被测功能 |
+| E502 | SCREENSHOT_MISMATCH | 截图对比失败 | 检查UI变化 |
+| E503 | REGRESSION_FAILED | 回归测试失败 | 修复引入问题 |
+| E504 | TEST_EVIDENCE_INVALID | 测试证据无效 | 重新提供证据 |
+| E505 | COVERAGE_INSUFFICIENT | 测试覆盖不足 | 补充测试用例 |
+
+#### E6xx - 安全相关错误
+
+| 错误码 | 名称 | 描述 | 处理建议 |
+|--------|------|------|---------|
+| E601 | SECURITY_VIOLATION | 安全违规 | 检查操作合法性 |
+| E602 | SENSITIVE_DATA_EXPOSED | 敏感信息泄露 | 脱敏处理 |
+| E603 | UNAUTHORIZED_ACCESS | 未授权访问 | 检查权限 |
+| E604 | PATH_TRAVERSAL_DETECTED | 路径遍历检测 | 使用合法路径 |
+| E605 | COMMAND_INJECTION_DETECTED | 命令注入检测 | 过滤危险字符 |
+
+#### E9xx - 用户输入错误
+
+| 错误码 | 名称 | 描述 | 处理建议 |
+|--------|------|------|---------|
+| E901 | INVALID_INPUT | 无效输入 | 检查输入格式 |
+| E902 | INPUT_TOO_LONG | 输入过长 | 缩短输入内容 |
+| E903 | REQUIRED_FIELD_MISSING | 必填字段缺失 | 补充必填信息 |
+| E904 | INVALID_FILE_TYPE | 无效文件类型 | 使用正确格式 |
+| E905 | INVALID_OPERATION | 无效操作 | 检查操作合法性 |
+
+### 8.4 错误响应格式
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "E301",
+    "name": "CONTRACT_VALIDATION_FAILED",
+    "message": "契约验证失败：缺少必填字段 'version'",
+    "details": {
+      "field": "version",
+      "expected": "版本号格式：vX.Y",
+      "actual": null
+    },
+    "timestamp": "2024-02-19T10:30:00Z",
+    "traceId": "trace-xxx-xxx"
+  }
+}
+```
+
+### 8.5 错误处理最佳实践
+
+1. **错误记录**：所有错误必须记录到日志
+2. **错误传递**：错误应向上传递，不应被静默吞掉
+3. **错误恢复**：尽可能提供恢复建议
+4. **错误分类**：根据严重程度采取不同处理策略
+5. **错误追踪**：使用traceId追踪错误链路
+
+---
+
+## 九、技能开发检查清单
 
 创建或更新技能时，必须检查：
 
