@@ -1,6 +1,58 @@
 ---
 name: "engine-module-debugger"
+version: "1.0.0"
 description: "追踪和记录全栈游戏开发引擎中所有技能模块的调用情况，包括调用节点、调用目的和调用频次。在游戏开发完成时输出详细的模块使用报告，帮助用户优化和迭代引擎。在引擎初始化时自动激活，贯穿整个开发流程。"
+author: "engine-team"
+created_at: "2024-02-19"
+updated_at: "2026-02-20"
+
+layer: 3
+dependencies:
+  - name: "terminology-standard"
+    layer: 0
+    type: "required"
+    purpose: "术语标准引用"
+  - name: "fullstack-game-engine"
+    layer: 1
+    type: "required"
+    purpose: "流程定义引用"
+
+contracts:
+  input:
+    required_documents: []
+  output:
+    required_documents:
+      - pattern: "reports/module-usage-report-.*\\.json"
+        description: "模块使用报告"
+
+execution:
+  mode: "blocking"
+  preconditions: []
+  postconditions: []
+  rollback:
+    supported: false
+
+quality:
+  acceptance_criteria: []
+  testing:
+    required_tests: []
+    evidence_required: false
+
+tracking:
+  execution_status:
+    current: "PENDING"
+  error_codes: []
+  checkpoints: []
+
+functions:
+  main:
+    name: "track_module_call"
+    signature: "track_module_call(module: STRING, purpose: STRING) -> void"
+    description: "追踪模块调用"
+  queries:
+    - name: "generate_report"
+      signature: "generate_report() -> MODULE_REPORT"
+      description: "生成模块使用报告"
 ---
 
 # 引擎模块调试器

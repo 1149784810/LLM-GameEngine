@@ -1,6 +1,56 @@
 ---
 name: "pl-authority-guard"
+version: "1.0.0"
 description: "项目负责人(PL)权限守卫技能，强制执行PL职责边界，防止越权操作。在PL可能越权时自动触发，确保各司其职。"
+author: "engine-team"
+created_at: "2024-02-19"
+updated_at: "2026-02-20"
+
+layer: 4
+dependencies:
+  - name: "terminology-standard"
+    layer: 0
+    type: "required"
+    purpose: "术语标准引用"
+  - name: "fullstack-game-engine"
+    layer: 1
+    type: "required"
+    purpose: "流程定义引用"
+  - name: "skill-development-guide"
+    layer: 1
+    type: "required"
+    purpose: "技能开发规范"
+
+contracts:
+  input:
+    required_documents: []
+  output:
+    required_documents: []
+
+execution:
+  mode: "blocking"
+  preconditions: []
+  postconditions: []
+  rollback:
+    supported: false
+
+quality:
+  acceptance_criteria: []
+  testing:
+    required_tests: []
+    evidence_required: false
+
+tracking:
+  execution_status:
+    current: "PENDING"
+  error_codes: []
+  checkpoints: []
+
+functions:
+  main:
+    name: "check_authority"
+    signature: "check_authority(role: ROLE_ID, action: ACTION) -> AUTHORITY_RESULT"
+    description: "检查权限"
 ---
 
 # 项目负责人(PL)权限守卫

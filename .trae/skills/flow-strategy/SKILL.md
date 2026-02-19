@@ -1,6 +1,58 @@
 ---
 name: "flow-strategy"
+version: "1.0.0"
 description: "流程策略管理器，定义不同项目类型的流程策略，支持策略切换和动态调整。实现开闭原则，新增项目类型无需修改核心流程。"
+author: "engine-team"
+created_at: "2024-02-19"
+updated_at: "2026-02-20"
+
+layer: 4
+dependencies:
+  - name: "terminology-standard"
+    layer: 0
+    type: "required"
+    purpose: "术语标准引用"
+  - name: "fullstack-game-engine"
+    layer: 1
+    type: "required"
+    purpose: "流程定义引用"
+
+contracts:
+  input:
+    required_documents: []
+  output:
+    required_documents:
+      - pattern: "strategies/.*-strategy\\.json"
+        description: "流程策略配置"
+
+execution:
+  mode: "blocking"
+  preconditions: []
+  postconditions: []
+  rollback:
+    supported: false
+
+quality:
+  acceptance_criteria: []
+  testing:
+    required_tests: []
+    evidence_required: false
+
+tracking:
+  execution_status:
+    current: "PENDING"
+  error_codes: []
+  checkpoints: []
+
+functions:
+  main:
+    name: "get_strategy"
+    signature: "get_strategy(project_type: STRING) -> STRATEGY"
+    description: "获取流程策略"
+  queries:
+    - name: "list_strategies"
+      signature: "list_strategies() -> [STRATEGY_INFO]"
+      description: "列出所有可用策略"
 ---
 
 # 流程策略管理器

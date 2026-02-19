@@ -1,6 +1,53 @@
 ---
 name: "project-optimizer"
+version: "1.0.0"
 description: "对已有或新建项目进行需求变更优化，确保最小改动原则。Invoke when user needs to modify specific requirements while keeping other stable features intact, or when performing targeted optimizations on existing projects."
+author: "engine-team"
+created_at: "2024-02-19"
+updated_at: "2026-02-20"
+
+layer: 3
+dependencies:
+  - name: "terminology-standard"
+    layer: 0
+    type: "required"
+    purpose: "术语标准引用"
+  - name: "fullstack-game-engine"
+    layer: 1
+    type: "required"
+    purpose: "流程定义引用"
+
+contracts:
+  input:
+    required_documents: []
+  output:
+    required_documents: []
+
+execution:
+  mode: "blocking"
+  preconditions: []
+  postconditions: []
+  rollback:
+    supported: true
+    strategy: "checkpoint"
+
+quality:
+  acceptance_criteria: []
+  testing:
+    required_tests: []
+    evidence_required: false
+
+tracking:
+  execution_status:
+    current: "PENDING"
+  error_codes: []
+  checkpoints: []
+
+functions:
+  main:
+    name: "optimize"
+    signature: "optimize(project_path: PATH, changes: [CHANGE]) -> OPTIMIZE_RESULT"
+    description: "优化项目"
 ---
 
 # 项目优化器 (Project Optimizer)

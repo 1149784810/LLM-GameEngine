@@ -1,6 +1,59 @@
 ---
 name: "event-bus"
+version: "1.0.0"
 description: "事件总线，负责接收和分发游戏开发流程事件，实现流程推进和角色调度的解耦。支持事件订阅、历史查询和回放。"
+author: "engine-team"
+created_at: "2024-02-19"
+updated_at: "2026-02-20"
+
+layer: 2
+dependencies:
+  - name: "terminology-standard"
+    layer: 0
+    type: "required"
+    purpose: "术语标准引用"
+  - name: "fullstack-game-engine"
+    layer: 1
+    type: "required"
+    purpose: "流程定义引用"
+
+contracts:
+  input:
+    required_documents: []
+  output:
+    required_documents: []
+
+execution:
+  mode: "blocking"
+  preconditions: []
+  postconditions: []
+  rollback:
+    supported: false
+
+quality:
+  acceptance_criteria: []
+  testing:
+    required_tests: []
+    evidence_required: false
+
+tracking:
+  execution_status:
+    current: "PENDING"
+  error_codes: []
+  checkpoints: []
+
+functions:
+  main:
+    name: "emit"
+    signature: "emit(event_type: STRING, data: ANY) -> void"
+    description: "发布事件"
+  queries:
+    - name: "subscribe"
+      signature: "subscribe(event_type: STRING, handler: HANDLER) -> SUBSCRIPTION_ID"
+      description: "订阅事件"
+    - name: "get_history"
+      signature: "get_history(filter: FILTER) -> [EVENT]"
+      description: "获取事件历史"
 ---
 
 # 事件总线

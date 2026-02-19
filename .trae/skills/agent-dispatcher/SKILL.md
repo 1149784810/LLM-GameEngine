@@ -1,6 +1,56 @@
 ---
 name: "agent-dispatcher"
+version: "1.0.0"
 description: "智能体调度器，负责所有智能体的统一调度和中转，实现请求方与被调用方之间的通信中转。在项目流程确定后调用，确保所有智能体调度通过统一的中转站进行。"
+author: "engine-team"
+created_at: "2024-02-19"
+updated_at: "2026-02-20"
+
+layer: 3
+dependencies:
+  - name: "terminology-standard"
+    layer: 0
+    type: "required"
+    purpose: "术语标准引用"
+  - name: "fullstack-game-engine"
+    layer: 1
+    type: "required"
+    purpose: "流程定义引用"
+
+contracts:
+  input:
+    required_documents: []
+  output:
+    required_documents: []
+
+execution:
+  mode: "parallel"
+  preconditions: []
+  postconditions: []
+  rollback:
+    supported: false
+
+quality:
+  acceptance_criteria: []
+  testing:
+    required_tests: []
+    evidence_required: false
+
+tracking:
+  execution_status:
+    current: "PENDING"
+  error_codes: []
+  checkpoints: []
+
+functions:
+  main:
+    name: "dispatch"
+    signature: "dispatch(agent_type: STRING, task: TASK) -> RESULT"
+    description: "调度智能体执行任务"
+  queries:
+    - name: "get_available_agents"
+      signature: "get_available_agents() -> [AGENT_INFO]"
+      description: "获取可用智能体列表"
 ---
 
 # 智能体调度器

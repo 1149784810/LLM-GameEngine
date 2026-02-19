@@ -1,15 +1,103 @@
 ---
 name: "project-experience-summarizer"
+version: "1.0.0"
 description: "Summarizes project development experience and lessons learned after fullstack development completion. Invoke when fullstack-game-engine finishes execution to collect bug feedback, solve issues, and document solutions for future reference."
+author: "engine-team"
+created_at: "2024-02-19"
+updated_at: "2026-02-20"
+
+layer: 4
+dependencies:
+  - name: "terminology-standard"
+    layer: 0
+    type: "required"
+    purpose: "术语标准引用"
+  - name: "fullstack-game-engine"
+    layer: 1
+    type: "required"
+    purpose: "流程定义引用"
+
+contracts:
+  input:
+    required_documents: []
+  output:
+    required_documents:
+      - pattern: "docs/06-经验文档/EXPERIENCE-.*\\.md"
+        description: "经验总结文档"
+
+execution:
+  mode: "blocking"
+  preconditions: []
+  postconditions: []
+  rollback:
+    supported: false
+
+quality:
+  acceptance_criteria: []
+  testing:
+    required_tests: []
+    evidence_required: false
+
+tracking:
+  execution_status:
+    current: "PENDING"
+  error_codes: []
+  checkpoints: []
+
+functions:
+  main:
+    name: "summarize"
+    signature: "summarize(project_path: PATH) -> EXPERIENCE_REPORT"
+    description: "总结项目经验"
 ---
 
 # 项目开发经验总结
 
 ## 触发时机
 
-**CRITICAL**: 此技能有三个触发时机：
+**CRITICAL**: 此技能有多个触发时机：
 
-### 时机1：项目开发完成后（主要）
+### Phase 8 触发条件 ⭐明确定义
+
+**Phase 8（经验总结阶段）在以下条件满足时自动触发：**
+
+```
+Phase 8 触发条件检查:
+├─ 条件1: BP-014 项目交付完成 ✅
+│   └─ FINAL-DELIVERY-[YYYYMMDD].md 已生成
+│
+├─ 条件2: 所有测试通过 ✅
+│   └─ QA-TEST-REPORT 显示无P0/P1问题
+│
+├─ 条件3: 用户确认交付 ✅
+│   └─ 用户已确认最终交付物
+│
+└─ 触发方式:
+    ├─ 自动触发: BP-014 解锁后自动进入 Phase 8
+    └─ 手动触发: 用户请求"总结项目经验"
+```
+
+**Phase 8 执行流程：**
+```
+BP-014 解锁（项目交付完成）
+    ↓
+自动进入 Phase 8
+    ↓
+调用 project-experience-summarizer
+    ↓
+执行经验总结流程
+    ├─ 收集所有Bug记录
+    ├─ 分析问题模式
+    ├─ 提取经验教训
+    ├─ 更新经验库
+    └─ 生成经验总结报告
+    ↓
+Phase 8 完成
+    ↓
+项目全流程结束
+```
+
+### 时机1：项目开发完成后（主要 - Phase 8）
 在全栈游戏开发引擎(fullstack-game-engine)执行完毕后立即调用，进行Bug收集和经验总结。
 
 ### 时机2：新项目需求分析阶段（查询模式）

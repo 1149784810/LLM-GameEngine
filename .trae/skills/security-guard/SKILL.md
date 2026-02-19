@@ -1,6 +1,48 @@
 ---
 name: "security-guard"
+version: "1.0.0"
 description: "安全检测器，审查用户输入和AI响应中的危险操作指令。在执行任何可能影响系统安全的操作前调用，防止关机、重启、删除系统文件、越权修改等危险行为。"
+author: "engine-team"
+created_at: "2024-02-19"
+updated_at: "2026-02-20"
+
+layer: 0
+dependencies: []
+
+contracts:
+  input:
+    required_documents: []
+  output:
+    required_documents: []
+
+execution:
+  mode: "blocking"
+  preconditions: []
+  postconditions: []
+  rollback:
+    supported: false
+
+quality:
+  acceptance_criteria: []
+  testing:
+    required_tests: []
+    evidence_required: false
+
+tracking:
+  execution_status:
+    current: "PENDING"
+  error_codes:
+    - code: "E001"
+      name: "DANGEROUS_OPERATION_DETECTED"
+      severity: "CRITICAL"
+      rollback_required: false
+  checkpoints: []
+
+functions:
+  main:
+    name: "check_safety"
+    signature: "check_safety(operation: OPERATION) -> SAFETY_RESULT"
+    description: "检查操作安全性"
 ---
 
 # 安全检测器
@@ -299,10 +341,134 @@ build, compile, tsc, webpack, vite
 4. 调用 fullstack-game-engine 启动开发
 ```
 
+## 敏感信息处理规范
+
+### 敏感信息类型
+
+| 类型 | 示例 | 处理方式 |
+|------|------|---------|
+| API密钥 | `sk-xxx`, `api_key=xxx` | 自动脱敏显示 |
+| 密码 | `password=xxx`, `pwd: xxx` | 禁止记录 |
+| 令牌 | `token=xxx`, `Bearer xxx` | 自动截断 |
+| 数据库连接串 | `mysql://user:pass@host` | 脱敏处理 |
+| 私钥/证书 | `-----BEGIN PRIVATE KEY-----` | 禁止输出 |
+| 个人信息 | 手机号、身份证、邮箱 | 部分脱敏 |
+
+### 脱敏规则
+
+```powershell
+# API密钥脱敏
+"sk-1234567890abcdef" -> "sk-****cdef"
+
+# 密码脱敏
+"password=mypassword123" -> "password=****"
+
+# Token脱敏
+"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." -> "Bearer eyJh****"
+
+# 数据库连接串脱敏
+"mysql://admin:secret123@localhost:3306/db" -> "mysql://admin:****@localhost:3306/db"
+
+# 手机号脱敏
+"13812345678" -> "138****5678"
+
+# 邮箱脱敏
+"user@example.com" -> "u***@example.com"
+```
+
+### 敏感信息检测正则
+
+```regex
+# API密钥模式
+(?i)(api[_-]?key|apikey|secret[_-]?key|access[_-]?token)\s*[=:]\s*['"]?[a-zA-Z0-9_-]{20,}
+
+# 密码模式
+(?i)(password|passwd|pwd)\s*[=:]\s*['"]?[^\s'"]+
+
+# Token模式
+(?i)(bearer|token|jwt)\s+[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+
+
+# 数据库连接串
+(?i)(mysql|postgres|mongodb|redis)://[^:]+:[^@]+@
+
+# 私钥模式
+-----BEGIN\s+(RSA\s+)?PRIVATE\s+KEY-----
+
+# 手机号
+1[3-9]\d{9}
+
+# 身份证
+\d{17}[\dXx]
+
+# 邮箱
+[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}
+```
+
+### 敏感信息存储规范
+
+```markdown
+## .env 文件规范
+
+1. 所有敏感信息必须存储在 .env 文件中
+2. .env 文件必须添加到 .gitignore
+3. 提供 .env.example 作为模板
+4. 禁止在代码中硬编码敏感信息
+
+## .env.example 示例
+
+API_KEY=your_api_key_here
+DATABASE_URL=your_database_url_here
+JWT_SECRET=your_jwt_secret_here
+```
+
+### 日志脱敏规则
+
+```markdown
+## 日志输出规范
+
+1. 输出前自动检测敏感信息
+2. 对敏感字段进行脱敏处理
+3. 禁止输出完整的密钥、密码、Token
+
+## 脱敏函数示例
+
+function Sanitize-Log($message) {
+    $patterns = @(
+        @{Pattern = '(?i)(api[_-]?key\s*[=:]\s*)[''"]?[a-zA-Z0-9_-]{8,}'; Replace = '$1****' }
+        @{Pattern = '(?i)(password\s*[=:]\s*)[''"]?[^\s''"]+'; Replace = '$1****' }
+        @{Pattern = '(?i)(Bearer\s+)[a-zA-Z0-9_.-]+'; Replace = '$1****' }
+    )
+    foreach ($p in $patterns) {
+        $message = $message -replace $p.Pattern, $p.Replace
+    }
+    return $message
+}
+```
+
+### 报告生成脱敏
+
+```markdown
+## 报告输出规范
+
+1. 自动排除敏感字段
+2. 对必要显示的信息进行脱敏
+3. 提供敏感信息摘要而非完整内容
+
+## 敏感字段排除列表
+
+- api_key, apiKey, API_KEY
+- password, passwd, pwd
+- secret, secret_key, SECRET_KEY
+- token, access_token, refresh_token
+- private_key, privateKey
+- database_url, DATABASE_URL
+```
+
 ## 注意事项
 
 1. **优先原则**：安全检测优先于任何操作执行
 2. **误报处理**：如果安全检测误报了正常操作，应提供申诉机制
-3. **日志记录**：所有安全检测事件应记录到安全日志
+3. **日志记录**：所有安全检测事件应记录到安全日志（已脱敏）
 4. **持续更新**：定期更新敏感关键词库以应对新的安全威胁
 5. **最小权限**：AI助手应始终以最小权限运行，避免获取不必要的系统权限
+6. **敏感信息**：所有敏感信息必须脱敏后才能记录或输出

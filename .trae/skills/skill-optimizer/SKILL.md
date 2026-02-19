@@ -1,6 +1,56 @@
 ---
 name: "skill-optimizer"
+version: "1.0.0"
 description: "Analyzes and optimizes skill definitions to eliminate redundancy and conflicts. Invoke when creating new skills, updating existing skills, or when detecting overlapping functionality between skills."
+author: "engine-team"
+created_at: "2024-02-19"
+updated_at: "2026-02-20"
+
+layer: 4
+dependencies:
+  - name: "terminology-standard"
+    layer: 0
+    type: "required"
+    purpose: "术语标准引用"
+  - name: "skill-development-guide"
+    layer: 1
+    type: "required"
+    purpose: "技能开发规范"
+
+contracts:
+  input:
+    required_documents: []
+  output:
+    required_documents: []
+
+execution:
+  mode: "blocking"
+  preconditions: []
+  postconditions: []
+  rollback:
+    supported: false
+
+quality:
+  acceptance_criteria: []
+  testing:
+    required_tests: []
+    evidence_required: false
+
+tracking:
+  execution_status:
+    current: "PENDING"
+  error_codes: []
+  checkpoints: []
+
+functions:
+  main:
+    name: "optimize_skills"
+    signature: "optimize_skills(skills: [SKILL]) -> OPTIMIZATION_RESULT"
+    description: "优化技能定义"
+  queries:
+    - name: "detect_redundancy"
+      signature: "detect_redundancy() -> [REDUNDANCY_REPORT]"
+      description: "检测冗余"
 ---
 
 # 技能优化器 (Skill Optimizer)

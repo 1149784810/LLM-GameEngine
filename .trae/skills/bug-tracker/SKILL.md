@@ -1,6 +1,58 @@
 ---
 name: "bug-tracker"
+version: "1.0.0"
 description: "Bug追踪管理器，负责记录、跟踪和管理项目中的所有Bug和问题。建立标准化的问题追踪机制，防止'按下葫芦浮起瓢'的情况发生。引用 qa-standards-manager 定义的回归测试(RT)标准。"
+author: "engine-team"
+created_at: "2024-02-19"
+updated_at: "2026-02-20"
+
+layer: 4
+dependencies:
+  - name: "terminology-standard"
+    layer: 0
+    type: "required"
+    purpose: "术语标准引用"
+  - name: "qa-standards-manager"
+    layer: 3
+    type: "required"
+    purpose: "测试标准引用"
+  - name: "project-experience-summarizer"
+    layer: 4
+    type: "required"
+    purpose: "经验库集成"
+
+contracts:
+  input:
+    required_documents: []
+  output:
+    required_documents:
+      - pattern: "docs/05-测试文档/BUG-REPORT-.*\\.md"
+        description: "Bug报告"
+
+execution:
+  mode: "blocking"
+  preconditions: []
+  postconditions: []
+  rollback:
+    supported: false
+
+quality:
+  acceptance_criteria: []
+  testing:
+    required_tests: []
+    evidence_required: false
+
+tracking:
+  execution_status:
+    current: "PENDING"
+  error_codes: []
+  checkpoints: []
+
+functions:
+  main:
+    name: "track_bug"
+    signature: "track_bug(bug_info: BUG_INFO) -> BUG_ID"
+    description: "记录和追踪Bug"
 ---
 
 # Bug追踪管理器

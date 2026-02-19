@@ -1,6 +1,64 @@
 ---
 name: "command-manager"
+version: "1.0.0"
 description: "命令管理器，负责封装流程操作为命令，支持命令的撤销(Undo)和重做(Redo)。实现操作的完整可追溯性。"
+author: "engine-team"
+created_at: "2024-02-19"
+updated_at: "2026-02-20"
+
+layer: 2
+dependencies:
+  - name: "terminology-standard"
+    layer: 0
+    type: "required"
+    purpose: "术语标准引用"
+  - name: "state-manager"
+    layer: 2
+    type: "required"
+    purpose: "状态管理"
+  - name: "event-bus"
+    layer: 2
+    type: "required"
+    purpose: "事件总线"
+
+contracts:
+  input:
+    required_documents: []
+  output:
+    required_documents: []
+
+execution:
+  mode: "blocking"
+  preconditions: []
+  postconditions: []
+  rollback:
+    supported: true
+    strategy: "checkpoint"
+
+quality:
+  acceptance_criteria: []
+  testing:
+    required_tests: []
+    evidence_required: false
+
+tracking:
+  execution_status:
+    current: "PENDING"
+  error_codes: []
+  checkpoints: []
+
+functions:
+  main:
+    name: "execute_command"
+    signature: "execute_command(command: COMMAND) -> RESULT"
+    description: "执行命令"
+  state_managers:
+    - name: "undo"
+      signature: "undo() -> RESULT"
+      description: "撤销上一个命令"
+    - name: "redo"
+      signature: "redo() -> RESULT"
+      description: "重做命令"
 ---
 
 # 命令管理器

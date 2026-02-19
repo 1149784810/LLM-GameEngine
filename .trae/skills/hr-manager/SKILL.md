@@ -1,6 +1,56 @@
 ---
 name: "hr-manager"
+version: "1.0.0"
 description: "人力资源管理器，负责根据 fullstack-game-engine 定义的流程进行团队角色分配、职责划分和工作负载均衡。引用标准流程，专注于人员分配执行。"
+author: "engine-team"
+created_at: "2024-02-19"
+updated_at: "2026-02-20"
+
+layer: 3
+dependencies:
+  - name: "terminology-standard"
+    layer: 0
+    type: "required"
+    purpose: "术语标准引用"
+  - name: "fullstack-game-engine"
+    layer: 1
+    type: "required"
+    purpose: "流程定义引用"
+
+contracts:
+  input:
+    required_documents: []
+  output:
+    required_documents: []
+
+execution:
+  mode: "parallel"
+  preconditions: []
+  postconditions: []
+  rollback:
+    supported: false
+
+quality:
+  acceptance_criteria: []
+  testing:
+    required_tests: []
+    evidence_required: false
+
+tracking:
+  execution_status:
+    current: "PENDING"
+  error_codes: []
+  checkpoints: []
+
+functions:
+  main:
+    name: "assign_roles"
+    signature: "assign_roles(project_spec: PROJECT_SPEC) -> ROLE_ASSIGNMENT"
+    description: "分配项目角色"
+  queries:
+    - name: "get_role"
+      signature: "get_role(role_id: ROLE_ID) -> ROLE_INFO"
+      description: "获取角色信息"
 ---
 
 # 人力资源管理器

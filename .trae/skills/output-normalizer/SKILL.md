@@ -1,6 +1,48 @@
 ---
 name: "output-normalizer"
+version: "1.0.0"
 description: "Determines the most appropriate output directory for files and assets based on context. Invoke when any agent needs to create files, write outputs, or save assets to disk."
+author: "engine-team"
+created_at: "2024-02-19"
+updated_at: "2026-02-20"
+
+layer: 0
+dependencies: []
+
+contracts:
+  input:
+    required_documents: []
+  output:
+    required_documents: []
+
+execution:
+  mode: "blocking"
+  preconditions: []
+  postconditions: []
+  rollback:
+    supported: false
+
+quality:
+  acceptance_criteria: []
+  testing:
+    required_tests: []
+    evidence_required: false
+
+tracking:
+  execution_status:
+    current: "PENDING"
+  error_codes: []
+  checkpoints: []
+
+functions:
+  main:
+    name: "normalize_path"
+    signature: "normalize_path(file_type: STRING, context: CONTEXT) -> PATH"
+    description: "规范化输出路径"
+  queries:
+    - name: "get_output_dir"
+      signature: "get_output_dir(asset_type: STRING) -> DIR_PATH"
+      description: "获取输出目录"
 ---
 
 # 输出规范器

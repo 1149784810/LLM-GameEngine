@@ -1,10 +1,66 @@
 ---
 name: "fullstack-engine-init"
+version: "1.0.0"
 description: "初始化全栈游戏开发引擎环境，检查必要技能依赖。在用户发出制作游戏需求时调用，验证全栈游戏开发引擎和需求规范器技能是否存在，自动扫描和加载所有游戏开发相关技能，并激活引擎模块调试器进行调用追踪。"
-dependencies:
-  - terminology-standard
-  - engine-module-debugger
+author: "engine-team"
+created_at: "2024-02-19"
+updated_at: "2026-02-20"
+
 layer: 3
+dependencies:
+  - name: "terminology-standard"
+    layer: 0
+    type: "required"
+    purpose: "术语标准引用"
+  - name: "engine-module-debugger"
+    layer: 3
+    type: "required"
+    purpose: "模块调试器"
+
+contracts:
+  input:
+    required_documents: []
+  output:
+    required_documents: []
+
+execution:
+  mode: "blocking"
+  preconditions: []
+  postconditions: []
+  rollback:
+    supported: false
+
+quality:
+  acceptance_criteria:
+    - id: "AC-001"
+      description: "所有必需技能存在"
+      metric: "required_skills_exist"
+      threshold: 1.0
+      operator: "=="
+      required: true
+  testing:
+    required_tests: []
+    evidence_required: false
+
+tracking:
+  execution_status:
+    current: "PENDING"
+  error_codes:
+    - code: "E001"
+      name: "SKILL_NOT_FOUND"
+      severity: "CRITICAL"
+      rollback_required: false
+  checkpoints: []
+
+functions:
+  main:
+    name: "initialize"
+    signature: "initialize() -> INIT_RESULT"
+    description: "初始化引擎环境"
+  queries:
+    - name: "check_dependencies"
+      signature: "check_dependencies() -> DEPENDENCY_CHECK_RESULT"
+      description: "检查依赖技能"
 ---
 
 # 全栈引擎初始化

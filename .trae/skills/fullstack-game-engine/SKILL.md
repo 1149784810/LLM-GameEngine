@@ -1,9 +1,58 @@
 ---
 name: "fullstack-game-engine"
+version: "1.0.0"
 description: "全栈游戏开发流程的唯一权威定义。定义完整的开发流程 Phase 0-5（含3个伴生阶段）、执行位、阻塞点和角色职责。所有其他技能引用流程时必须以本技能为准。"
-dependencies:
-  - terminology-standard
+author: "engine-team"
+created_at: "2024-02-19"
+updated_at: "2026-02-20"
+
 layer: 1
+dependencies:
+  - name: "terminology-standard"
+    layer: 0
+    type: "required"
+    purpose: "术语标准引用"
+
+contracts:
+  input:
+    required_documents: []
+  output:
+    required_documents:
+      - pattern: "docs/00-项目元数据/PROJECT-INFO\\.md"
+        description: "项目元数据"
+
+execution:
+  mode: "blocking"
+  preconditions: []
+  postconditions: []
+  rollback:
+    supported: true
+    strategy: "checkpoint"
+
+quality:
+  acceptance_criteria: []
+  testing:
+    required_tests: []
+    evidence_required: false
+
+tracking:
+  execution_status:
+    current: "PENDING"
+  error_codes: []
+  checkpoints: []
+
+functions:
+  main:
+    name: "execute"
+    signature: "execute(project_spec: PROJECT_SPEC) -> EXECUTION_RESULT"
+    description: "执行全栈游戏开发流程"
+  queries:
+    - name: "get_phase"
+      signature: "get_phase(phase_id: STRING) -> PHASE_DEF"
+      description: "获取阶段定义"
+    - name: "get_blocking_points"
+      signature: "get_blocking_points(phase: STRING) -> [BP]"
+      description: "获取阻塞点列表"
 ---
 
 # 全栈游戏开发引擎

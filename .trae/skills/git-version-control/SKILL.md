@@ -1,6 +1,56 @@
 ---
 name: "git-version-control"
+version: "1.0.0"
 description: "Manages all Git version control operations including commit, push, pull, branch management, and repository synchronization. Invoke when user needs any Git-related operations or version control tasks."
+author: "engine-team"
+created_at: "2024-02-19"
+updated_at: "2026-02-20"
+
+layer: 4
+dependencies:
+  - name: "terminology-standard"
+    layer: 0
+    type: "required"
+    purpose: "术语标准引用"
+
+contracts:
+  input:
+    required_documents: []
+  output:
+    required_documents: []
+
+execution:
+  mode: "blocking"
+  preconditions: []
+  postconditions: []
+  rollback:
+    supported: true
+    strategy: "checkpoint"
+
+quality:
+  acceptance_criteria: []
+  testing:
+    required_tests: []
+    evidence_required: false
+
+tracking:
+  execution_status:
+    current: "PENDING"
+  error_codes: []
+  checkpoints: []
+
+functions:
+  main:
+    name: "commit"
+    signature: "commit(message: STRING, files: [PATH]) -> COMMIT_RESULT"
+    description: "提交代码变更"
+  state_managers:
+    - name: "push"
+      signature: "push(remote: STRING, branch: STRING) -> PUSH_RESULT"
+      description: "推送到远程仓库"
+    - name: "pull"
+      signature: "pull(remote: STRING, branch: STRING) -> PULL_RESULT"
+      description: "拉取远程更新"
 ---
 
 # Git 版本控制技能

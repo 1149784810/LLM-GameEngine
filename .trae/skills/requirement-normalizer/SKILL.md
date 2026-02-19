@@ -1,6 +1,60 @@
 ---
 name: "requirement-normalizer"
+version: "1.0.0"
 description: "反复核对和澄清用户需求，将模糊需求转化为可执行的具体流程和步骤。在全栈开发启动前必须调用，确保需求足够清晰可拆解。"
+author: "engine-team"
+created_at: "2024-02-19"
+updated_at: "2026-02-20"
+
+layer: 3
+dependencies:
+  - name: "terminology-standard"
+    layer: 0
+    type: "required"
+    purpose: "术语标准引用"
+  - name: "fullstack-game-engine"
+    layer: 1
+    type: "required"
+    purpose: "流程定义引用"
+
+contracts:
+  input:
+    required_documents: []
+  output:
+    required_documents:
+      - pattern: "docs/01-需求文档/REQ-NORMALIZED-.*\\.md"
+        description: "规范化需求文档"
+
+execution:
+  mode: "blocking"
+  preconditions: []
+  postconditions: []
+  rollback:
+    supported: false
+
+quality:
+  acceptance_criteria:
+    - id: "AC-001"
+      description: "需求清晰度"
+      metric: "requirement_clarity"
+      threshold: 0.8
+      operator: ">="
+      required: true
+  testing:
+    required_tests: []
+    evidence_required: false
+
+tracking:
+  execution_status:
+    current: "PENDING"
+  error_codes: []
+  checkpoints: []
+
+functions:
+  main:
+    name: "normalize"
+    signature: "normalize(raw_requirement: STRING) -> NORMALIZED_REQUIREMENT"
+    description: "规范化需求"
 ---
 
 # 需求规范器

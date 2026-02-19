@@ -1,6 +1,66 @@
 ---
 name: "asset-generation-manager"
+version: "1.0.0"
 description: "资产生成管理器，负责管理游戏艺术资产的生成流程。优先调用MCP图像生成工具（如LiblibAI），在MCP工具不可用时使用程序化生成方案。确保资产生成的高效性和一致性。"
+author: "engine-team"
+created_at: "2024-02-19"
+updated_at: "2026-02-20"
+
+layer: 4
+dependencies:
+  - name: "terminology-standard"
+    layer: 0
+    type: "required"
+    purpose: "术语标准引用"
+  - name: "fullstack-game-engine"
+    layer: 1
+    type: "required"
+    purpose: "流程定义引用"
+  - name: "agent-dispatcher"
+    layer: 3
+    type: "required"
+    purpose: "智能体调度"
+
+contracts:
+  input:
+    required_documents:
+      - pattern: "docs/02-策划文档/ASSET-REQ-.*\\.md"
+        description: "资产需求文档"
+  output:
+    required_documents:
+      - pattern: "assets/.*/.*\\.(png|jpg|wav|mp3)"
+        description: "生成的资产文件"
+
+execution:
+  mode: "blocking"
+  preconditions: []
+  postconditions: []
+  rollback:
+    supported: true
+    strategy: "checkpoint"
+    side_effects:
+      - "删除已生成的资产文件"
+    recovery_actions:
+      - action: "DELETE_ARTIFACTS"
+        target: "assets/*"
+
+quality:
+  acceptance_criteria: []
+  testing:
+    required_tests: []
+    evidence_required: false
+
+tracking:
+  execution_status:
+    current: "PENDING"
+  error_codes: []
+  checkpoints: []
+
+functions:
+  main:
+    name: "generate_asset"
+    signature: "generate_asset(asset_spec: ASSET_SPEC) -> ASSET_PATH"
+    description: "生成游戏资产"
 ---
 
 # 资产生成管理器

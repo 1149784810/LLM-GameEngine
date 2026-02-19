@@ -1,6 +1,52 @@
 ---
 name: "skill-development-guide"
+version: "1.0.0"
 description: "技能开发规范指南，定义创建新技能或更新现有技能时必须遵循的标准流程、引用规范和检查清单。确保技能库的一致性和无冗余。"
+author: "engine-team"
+created_at: "2024-02-19"
+updated_at: "2026-02-20"
+
+layer: 1
+dependencies:
+  - name: "terminology-standard"
+    layer: 0
+    type: "required"
+    purpose: "术语标准引用"
+
+contracts:
+  input:
+    required_documents: []
+  output:
+    required_documents: []
+
+execution:
+  mode: "blocking"
+  preconditions: []
+  postconditions: []
+  rollback:
+    supported: false
+
+quality:
+  acceptance_criteria: []
+  testing:
+    required_tests: []
+    evidence_required: false
+
+tracking:
+  execution_status:
+    current: "PENDING"
+  error_codes: []
+  checkpoints: []
+
+functions:
+  main:
+    name: "validate_skill"
+    signature: "validate_skill(skill_path: PATH) -> VALIDATION_RESULT"
+    description: "验证技能规范"
+  queries:
+    - name: "get_template"
+      signature: "get_template(skill_type: STRING) -> SKILL_TEMPLATE"
+      description: "获取技能模板"
 ---
 
 # 技能开发规范指南
