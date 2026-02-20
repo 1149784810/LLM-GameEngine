@@ -1,10 +1,10 @@
 ---
 name: "qa-standards-manager"
-version: "2.0.0"
+version: "2.1.0"
 description: "验收标准管理器，负责制定和管理游戏开发各阶段的验收标准。测试标准的唯一权威来源。核心原则：视觉测试(VT)与功能路径测试(FPT)合并执行，采用阻塞式流程，每一步必须截图验证后才能继续。Web游戏必须用浏览器全屏打开，全屏截图。"
 author: "engine-team"
 created_at: "2024-02-19"
-updated_at: "2026-02-20"
+updated_at: "2026-02-21"
 
 layer: 3
 dependencies:
@@ -69,7 +69,7 @@ quality:
       required: true
 ---
 
-# 验收标准管理器 v2.0
+# 验收标准管理器 v2.1
 
 > **核心原则**：视觉测试(VT)与功能路径测试(FPT)是同一个流程，必须合并执行。
 > 
@@ -155,6 +155,35 @@ powershell -File tools/qa-screenshots/take_screenshot.ps1 -OutputDir "projects/�
 - **必须**全屏截图，不能只截游戏区域
 - **必须**保存为PNG格式
 - **必须**保存到项目的 `screenshots/` 目录
+- **必须**捕获物理屏幕分辨率（忽略Windows DPI缩放）
+
+**截图脚本技术要求**：
+```powershell
+# 使用 GetDeviceCaps API 获取物理屏幕分辨率（忽略DPI缩放）
+Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+public class ScreenHelper {
+    [DllImport("gdi32.dll")]
+    public static extern int GetDeviceCaps(IntPtr hdc, int nIndex);
+    [DllImport("user32.dll")]
+    public static extern IntPtr GetDC(IntPtr hWnd);
+    [DllImport("user32.dll")]
+    public static extern int ReleaseDC(IntPtr hWnd, IntPtr hDC);
+    public const int DESKTOPHORZRES = 118;
+    public const int DESKTOPVERTRES = 117;
+}
+"@
+
+# 获取物理分辨率
+$physicalWidth = [ScreenHelper]::GetDeviceCaps([ScreenHelper]::GetDC([IntPtr]::Zero), [ScreenHelper]::DESKTOPHORZRES)
+$physicalHeight = [ScreenHelper]::GetDeviceCaps([ScreenHelper]::GetDC([IntPtr]::Zero), [ScreenHelper]::DESKTOPVERTRES)
+```
+
+**验证标准**：
+- 截图分辨率应等于物理屏幕分辨率（如 2560 x 1600）
+- 截图应包含整个屏幕内容，包括任务栏和所有窗口
+- 文件大小应 > 200 KB（全屏截图正常大小）
 
 ### 1.4 【阻塞】确认游戏正常显示
 
@@ -447,3 +476,4 @@ Read ".trae/skills/project-experience-summarizer/experience-db.md"
 |------|------|---------|
 | v1.0 | 2024-02-19 | 初始版本 |
 | v2.0 | 2026-02-20 | **重大重构**：1. 将VT和FPT合并为阻塞式流程；2. 强制使用浏览器全屏打开；3. 强制全屏截图；4. 每一步必须截图验证后才能继续；5. 删除产生歧义的部分 |
+| v2.1 | 2026-02-21 | **截图脚本修复**：1. 使用GetDeviceCaps API获取物理屏幕分辨率；2. 忽略Windows DPI缩放设置；3. 确保截图捕获完整全屏（2560x1600等物理分辨率） |
