@@ -53,45 +53,96 @@ try {
         public const int DESKTOPVERTRES = 117;
         
         public static int GetPhysicalScreenWidth() {
-            IntPtr hdc = GetDC(IntPtr.Zero);
-            int width = GetDeviceCaps(hdc, DESKTOPHORZRES);
-            ReleaseDC(IntPtr.Zero, hdc);
-            return width;
+            try {
+                IntPtr hdc = GetDC(IntPtr.Zero);
+                if (hdc == IntPtr.Zero) return 0;
+                int width = GetDeviceCaps(hdc, DESKTOPHORZRES);
+                ReleaseDC(IntPtr.Zero, hdc);
+                return width;
+            }
+            catch {
+                return 0;
+            }
         }
         
         public static int GetPhysicalScreenHeight() {
-            IntPtr hdc = GetDC(IntPtr.Zero);
-            int height = GetDeviceCaps(hdc, DESKTOPVERTRES);
-            ReleaseDC(IntPtr.Zero, hdc);
-            return height;
+            try {
+                IntPtr hdc = GetDC(IntPtr.Zero);
+                if (hdc == IntPtr.Zero) return 0;
+                int height = GetDeviceCaps(hdc, DESKTOPVERTRES);
+                ReleaseDC(IntPtr.Zero, hdc);
+                return height;
+            }
+            catch {
+                return 0;
+            }
         }
     }
 "@
 
-    # Get physical screen resolution
+    # Get all screens info
+    $screens = [System.Windows.Forms.Screen]::AllScreens
+    Write-Host "Detected $($screens.Count) screen(s):"
+    
+    # Calculate total bounds across all screens
+    $left = 0
+    $top = 0
+    $right = 0
+    $bottom = 0
+    
+    foreach ($screen in $screens) {
+        Write-Host "  - $($screen.DeviceName): $($screen.Bounds.Width) x $($screen.Bounds.Height) at ($($screen.Bounds.Left), $($screen.Bounds.Top))"
+        if ($screen.Bounds.Left -lt $left) { $left = $screen.Bounds.Left }
+        if ($screen.Bounds.Top -lt $top) { $top = $screen.Bounds.Top }
+        if ($screen.Bounds.Right -gt $right) { $right = $screen.Bounds.Right }
+        if ($screen.Bounds.Bottom -gt $bottom) { $bottom = $screen.Bounds.Bottom }
+    }
+    
+    # Get physical screen resolution (ignoring DPI scaling)
     $physicalWidth = [ScreenHelper]::GetPhysicalScreenWidth()
     $physicalHeight = [ScreenHelper]::GetPhysicalScreenHeight()
     
-    # Fallback to virtual resolution if physical detection fails
+    # If physical detection fails, use virtual resolution
     if ($physicalWidth -eq 0 -or $physicalHeight -eq 0) {
-        $screen = [System.Windows.Forms.Screen]::PrimaryScreen
-        $physicalWidth = $screen.Bounds.Width
-        $physicalHeight = $screen.Bounds.Height
+        Write-Host "Warning: Physical resolution detection failed, using virtual resolution" -ForegroundColor Yellow
+        $primaryScreen = [System.Windows.Forms.Screen]::PrimaryScreen
+        $physicalWidth = $primaryScreen.Bounds.Width
+        $physicalHeight = $primaryScreen.Bounds.Height
+    }
+    
+    # For multi-screen setup, use the total bounds
+    if ($screens.Count -gt 1) {
+        $totalWidth = $right - $left
+        $totalHeight = $bottom - $top
+        Write-Host "Multi-screen detected, using total bounds: $totalWidth x $totalHeight"
+        $physicalWidth = $totalWidth
+        $physicalHeight = $totalHeight
     }
 
     Write-Host "Screen info:"
-    Write-Host "  Physical Resolution: $physicalWidth x $physicalHeight"
-    Write-Host "  Virtual Resolution: $([System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Width) x $([System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Height)"
+    Write-Host "  Capture Resolution: $physicalWidth x $physicalHeight"
+    Write-Host "  Primary Screen Virtual: $([System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Width) x $([System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Height)"
 
-    # Create bitmap with physical resolution
+    # Validate resolution
+    if ($physicalWidth -le 0 -or $physicalHeight -le 0) {
+        throw "Invalid screen resolution: $physicalWidth x $physicalHeight"
+    }
+    
+    if ($physicalWidth -gt 10000 -or $physicalHeight -gt 10000) {
+        Write-Host "Warning: Unusually large resolution detected, capping to reasonable values" -ForegroundColor Yellow
+        $physicalWidth = [Math]::Min($physicalWidth, 7680)  # 8K max
+        $physicalHeight = [Math]::Min($physicalHeight, 4320)
+    }
+
+    # Create bitmap with detected resolution
     $bitmap = New-Object System.Drawing.Bitmap($physicalWidth, $physicalHeight)
 
     # Create graphics object
     $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
 
-    # Copy screen content from (0,0) with physical size
+    # Copy screen content
     $graphics.CopyFromScreen(
-        [System.Drawing.Point]::Empty,
+        [System.Drawing.Point]::new($left, $top),
         [System.Drawing.Point]::Empty,
         [System.Drawing.Size]::new($physicalWidth, $physicalHeight)
     )
@@ -106,18 +157,19 @@ try {
     # Verify file
     if (Test-Path $filePath) {
         $fileInfo = Get-Item $filePath
-        Write-Host "Screenshot saved successfully!"
+        Write-Host "Screenshot saved successfully!" -ForegroundColor Green
         Write-Host "  File: $($fileInfo.Name)"
         Write-Host "  Size: $([math]::Round($fileInfo.Length / 1KB, 2)) KB"
         Write-Host "  Resolution: $physicalWidth x $physicalHeight"
         Write-Host "  Path: $filePath"
         return $filePath
     } else {
-        Write-Host "Error: Failed to save screenshot"
+        Write-Host "Error: Failed to save screenshot" -ForegroundColor Red
         return $null
     }
 }
 catch {
-    Write-Host "Error taking screenshot: $_"
+    Write-Host "Error taking screenshot: $_" -ForegroundColor Red
+    Write-Host "Stack Trace: $($_.ScriptStackTrace)" -ForegroundColor Gray
     return $null
 }

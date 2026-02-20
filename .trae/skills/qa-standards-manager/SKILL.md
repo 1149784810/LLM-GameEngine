@@ -1,6 +1,6 @@
 ---
 name: "qa-standards-manager"
-version: "2.1.0"
+version: "2.1.1"
 description: "验收标准管理器，负责制定和管理游戏开发各阶段的验收标准。测试标准的唯一权威来源。核心原则：视觉测试(VT)与功能路径测试(FPT)合并执行，采用阻塞式流程，每一步必须截图验证后才能继续。Web游戏必须用浏览器全屏打开，全屏截图。"
 author: "engine-team"
 created_at: "2024-02-19"
@@ -69,7 +69,7 @@ quality:
       required: true
 ---
 
-# 验收标准管理器 v2.1
+# 验收标准管理器 v2.1.1
 
 > **核心原则**：视觉测试(VT)与功能路径测试(FPT)是同一个流程，必须合并执行。
 > 
@@ -172,18 +172,62 @@ public class ScreenHelper {
     public static extern int ReleaseDC(IntPtr hWnd, IntPtr hDC);
     public const int DESKTOPHORZRES = 118;
     public const int DESKTOPVERTRES = 117;
+    
+    public static int GetPhysicalScreenWidth() {
+        try {
+            IntPtr hdc = GetDC(IntPtr.Zero);
+            if (hdc == IntPtr.Zero) return 0;
+            int width = GetDeviceCaps(hdc, DESKTOPHORZRES);
+            ReleaseDC(IntPtr.Zero, hdc);
+            return width;
+        }
+        catch { return 0; }
+    }
+    
+    public static int GetPhysicalScreenHeight() {
+        try {
+            IntPtr hdc = GetDC(IntPtr.Zero);
+            if (hdc == IntPtr.Zero) return 0;
+            int height = GetDeviceCaps(hdc, DESKTOPVERTRES);
+            ReleaseDC(IntPtr.Zero, hdc);
+            return height;
+        }
+        catch { return 0; }
+    }
 }
 "@
 
-# 获取物理分辨率
-$physicalWidth = [ScreenHelper]::GetDeviceCaps([ScreenHelper]::GetDC([IntPtr]::Zero), [ScreenHelper]::DESKTOPHORZRES)
-$physicalHeight = [ScreenHelper]::GetDeviceCaps([ScreenHelper]::GetDC([IntPtr]::Zero), [ScreenHelper]::DESKTOPVERTRES)
+# 动态读取当前机器的分辨率（每次截图时重新检测）
+$screens = [System.Windows.Forms.Screen]::AllScreens
+$physicalWidth = [ScreenHelper]::GetPhysicalScreenWidth()
+$physicalHeight = [ScreenHelper]::GetPhysicalScreenHeight()
+
+# 多屏幕支持：计算所有屏幕的总边界
+if ($screens.Count -gt 1) {
+    $left = 0; $top = 0; $right = 0; $bottom = 0
+    foreach ($screen in $screens) {
+        if ($screen.Bounds.Left -lt $left) { $left = $screen.Bounds.Left }
+        if ($screen.Bounds.Top -lt $top) { $top = $screen.Bounds.Top }
+        if ($screen.Bounds.Right -gt $right) { $right = $screen.Bounds.Right }
+        if ($screen.Bounds.Bottom -gt $bottom) { $bottom = $screen.Bounds.Bottom }
+    }
+    $physicalWidth = $right - $left
+    $physicalHeight = $bottom - $top
+}
+
+# 容错处理：如果物理分辨率检测失败，使用虚拟分辨率
+if ($physicalWidth -eq 0 -or $physicalHeight -eq 0) {
+    $primaryScreen = [System.Windows.Forms.Screen]::PrimaryScreen
+    $physicalWidth = $primaryScreen.Bounds.Width
+    $physicalHeight = $primaryScreen.Bounds.Height
+}
 ```
 
 **验证标准**：
 - 截图分辨率应等于物理屏幕分辨率（如 2560 x 1600）
 - 截图应包含整个屏幕内容，包括任务栏和所有窗口
 - 文件大小应 > 200 KB（全屏截图正常大小）
+- **必须**每次截图时动态读取当前机器的分辨率（支持多机器/多屏幕环境）
 
 ### 1.4 【阻塞】确认游戏正常显示
 
@@ -477,3 +521,4 @@ Read ".trae/skills/project-experience-summarizer/experience-db.md"
 | v1.0 | 2024-02-19 | 初始版本 |
 | v2.0 | 2026-02-20 | **重大重构**：1. 将VT和FPT合并为阻塞式流程；2. 强制使用浏览器全屏打开；3. 强制全屏截图；4. 每一步必须截图验证后才能继续；5. 删除产生歧义的部分 |
 | v2.1 | 2026-02-21 | **截图脚本修复**：1. 使用GetDeviceCaps API获取物理屏幕分辨率；2. 忽略Windows DPI缩放设置；3. 确保截图捕获完整全屏（2560x1600等物理分辨率） |
+| v2.1.1 | 2026-02-21 | **截图脚本增强**：1. 每次截图动态读取当前机器分辨率；2. 支持多屏幕环境；3. 添加容错处理（检测失败时自动回退到虚拟分辨率） |
