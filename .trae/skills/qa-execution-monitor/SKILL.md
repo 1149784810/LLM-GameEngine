@@ -24,6 +24,10 @@ dependencies:
     layer: 0
     type: "required"
     purpose: "术语标准引用"
+  - name: "context-manager"
+    layer: 2
+    type: "required"
+    purpose: "上下文缓冲区监控"
 
 contracts:
   input:
@@ -54,10 +58,16 @@ execution:
     - type: "SKILL_CALLED"
       target: "qa-standards-manager"
       description: "QA标准管理器已被调用"
+    - type: "CONTEXT_READ"
+      target: "phase-context"
+      description: "已读取阶段上下文文件"
   postconditions:
     - type: "AUDIT_COMPLETE"
       target: "output"
       description: "执行审计完成"
+    - type: "CONTEXT_UPDATED"
+      target: "phase-context"
+      description: "已更新阶段上下文文件"
   rollback:
     supported: true
     conditions:
@@ -67,6 +77,10 @@ execution:
       - "阻止生成测试报告"
       - "要求补充执行缺失步骤"
       - "记录违规行为"
+  context_operations:
+    read_at_start: true
+    update_at_end: true
+    monitor_context_integrity: true
 
 quality:
   acceptance_criteria:

@@ -16,6 +16,10 @@ dependencies:
     layer: 1
     type: "required"
     purpose: "流程定义引用"
+  - name: "context-manager"
+    layer: 2
+    type: "required"
+    purpose: "上下文流程管理"
 
 contracts:
   input:
@@ -25,11 +29,21 @@ contracts:
 
 execution:
   mode: "blocking"
-  preconditions: []
-  postconditions: []
+  preconditions:
+    - type: "CONTEXT_READ"
+      target: "phase-context"
+      description: "已读取阶段上下文文件"
+  postconditions:
+    - type: "CONTEXT_UPDATED"
+      target: "phase-context"
+      description: "已更新阶段上下文文件"
   rollback:
     supported: true
     strategy: "checkpoint"
+  context_operations:
+    read_at_start: true
+    update_at_end: true
+    required_context_file: "PHASE-3-[流程建立]-[时间戳].md"
 
 quality:
   acceptance_criteria: []

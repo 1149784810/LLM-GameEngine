@@ -24,6 +24,10 @@ dependencies:
     layer: 2
     type: "required"
     purpose: "事件通知集成"
+  - name: "context-manager"
+    layer: 2
+    type: "required"
+    purpose: "上下文契约验证"
 
 contracts:
   input:
@@ -73,6 +77,9 @@ execution:
     - type: "MONITOR_ACTIVE"
       target: "qa-execution-monitor"
       description: "执行监控器已激活"
+    - type: "CONTEXT_READ"
+      target: "phase-context"
+      description: "已读取阶段上下文文件"
   postconditions:
     - type: "BP_UNLOCK"
       target: "BP-011"
@@ -80,6 +87,9 @@ execution:
     - type: "CONTRACT_VALIDATED"
       target: "output"
       description: "输出契约验证通过"
+    - type: "CONTEXT_UPDATED"
+      target: "phase-context"
+      description: "已更新阶段上下文文件"
   rollback:
     supported: true
     strategy: "checkpoint"
@@ -99,6 +109,10 @@ execution:
       - action: "NOTIFY_MONITOR"
         target: "qa-execution-monitor"
         message: "契约验证失败，停止监控"
+  context_operations:
+    read_at_start: true
+    update_at_end: true
+    validate_context_contracts: true
   
   # 运行时验证配置
   runtime_validation:

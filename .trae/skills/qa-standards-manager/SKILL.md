@@ -24,6 +24,10 @@ dependencies:
     layer: 2
     type: "required"
     purpose: "执行状态追踪"
+  - name: "context-manager"
+    layer: 2
+    type: "required"
+    purpose: "上下文缓冲区管理"
 
 contracts:
   input:
@@ -58,6 +62,9 @@ execution:
     - type: "CONTRACT_VALIDATED"
       target: "input"
       description: "输入契约已验证"
+    - type: "CONTEXT_READ"
+      target: "phase-context"
+      description: "已读取阶段上下文文件"
   postconditions:
     - type: "BP_UNLOCK"
       target: "BP-011"
@@ -65,6 +72,9 @@ execution:
     - type: "SCREENSHOT_VERIFIED"
       target: "output"
       description: "截图证据已验证"
+    - type: "CONTEXT_UPDATED"
+      target: "phase-context"
+      description: "已更新阶段上下文文件"
   rollback:
     supported: true
     conditions:
@@ -74,6 +84,10 @@ execution:
       - "删除未完成的测试报告"
       - "重置测试状态"
       - "要求重新执行测试"
+  context_operations:
+    read_at_start: true
+    update_at_end: true
+    required_context_file: "PHASE-4-Step-3-3-[QA测试]-[时间戳].md"
   
   # 强制执行机制
   enforcement_mechanisms:

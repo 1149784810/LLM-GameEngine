@@ -16,6 +16,10 @@ dependencies:
     layer: 1
     type: "required"
     purpose: "流程定义引用"
+  - name: "context-manager"
+    layer: 2
+    type: "required"
+    purpose: "上下文人员分配"
 
 contracts:
   input:
@@ -25,10 +29,20 @@ contracts:
 
 execution:
   mode: "parallel"
-  preconditions: []
-  postconditions: []
+  preconditions:
+    - type: "CONTEXT_READ"
+      target: "phase-context"
+      description: "已读取阶段上下文文件"
+  postconditions:
+    - type: "CONTEXT_UPDATED"
+      target: "phase-context"
+      description: "已更新阶段上下文文件"
   rollback:
     supported: false
+  context_operations:
+    read_at_start: true
+    update_at_end: true
+    required_context_file: "PHASE-2-[人员分配]-[时间戳].md"
 
 quality:
   acceptance_criteria: []

@@ -20,6 +20,10 @@ dependencies:
     layer: 2
     type: "required"
     purpose: "事件总线集成"
+  - name: "context-manager"
+    layer: 2
+    type: "required"
+    purpose: "上下文状态同步"
 
 contracts:
   input:
@@ -31,8 +35,14 @@ contracts:
 
 execution:
   mode: "blocking"
-  preconditions: []
-  postconditions: []
+  preconditions:
+    - type: "CONTEXT_READ"
+      target: "phase-context"
+      description: "已读取阶段上下文文件"
+  postconditions:
+    - type: "CONTEXT_UPDATED"
+      target: "phase-context"
+      description: "已更新阶段上下文文件"
   rollback:
     supported: true
     strategy: "checkpoint"
@@ -43,6 +53,10 @@ execution:
     recovery_actions:
       - action: "RESTORE_STATE"
         target: "previous_state_id"
+  context_operations:
+    read_at_start: true
+    update_at_end: true
+    sync_with_context: true
 
 quality:
   acceptance_criteria:
