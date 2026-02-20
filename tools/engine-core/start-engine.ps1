@@ -39,8 +39,16 @@ if (-not (Test-NodeJS)) {
 }
 
 Write-Info "[2/4] Checking engine core files..."
-$engineCorePath = Join-Path $PSScriptRoot "engine-core.js"
-$engineCliPath = Join-Path $PSScriptRoot "engine-cli.js"
+$scriptRoot = $PSScriptRoot
+if (-not $scriptRoot) {
+    $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+}
+if (-not $scriptRoot) {
+    $scriptRoot = "."
+}
+
+$engineCorePath = Join-Path $scriptRoot "engine-core.js"
+$engineCliPath = Join-Path $scriptRoot "engine-cli.js"
 
 if (-not (Test-Path $engineCorePath)) {
     Write-Error "[ERROR] Engine core file not found: $engineCorePath"

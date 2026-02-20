@@ -1,137 +1,115 @@
-#!/usr/bin/env node
-/**
- * 全栈游戏开发引擎 - CLI工具
- * 用于与引擎核心进程通信
- */
-
 const net = require('net');
 const fs = require('fs');
 const path = require('path');
 
-const TIMEOUT = 30000; // 30秒超时
+function getPort(projectId) {
+  // 使用相对路径 - 基于当前工作目录
+  const cwd = process.cwd();
+  const portFile = path.join(cwd, 'projects', projectId, '.engine', 'engine.port');
+  
+  if (fs.existsSync(portFile)) {
+    return parseInt(fs.readFileSync(portFile, 'utf8'));
+  }
+  
+  // 如果文件不存在，使用与引擎相同的算法计算端口
+  const crypto = require('crypto');
+  const hash = crypto.createHash('sha256').update(projectId).digest('hex');
+  const portNum = parseInt(hash.substring(0, 4), 16);
+  return 10000 + (portNum % 55000);
+}
 
-function sendCommand(projectId, command, params) {
+function sendCommand(projectId, command, params = {}) {
+  const port = getPort(projectId);
+  
   return new Promise((resolve, reject) => {
-    const portPath = path.join(process.cwd(), 'projects', projectId, '.engine', 'engine.port');
-    
-    if (!require('fs').existsSync(portPath)) {
-      reject(new Error(`引擎未运行: ${portPath} 不存在`));
-      return;
-    }
-    
-    const port = parseInt(require('fs').readFileSync(portPath, 'utf8'));
-    const host = '127.0.0.1';
-
-    const client = net.createConnection(port, host, () => {
-      const request = {
-        command: command,
-        params: params || {}
-      };
-      client.write(JSON.stringify(request) + '\n');
-    });
-
+    const client = new net.Socket();
     let buffer = '';
-    let timeoutId;
-
+    
+    client.connect(port, '127.0.0.1', () => {
+      let cmdLine = command;
+      Object.entries(params).forEach(([key, value]) => {
+        cmdLine += ` --${key} "${value}"`;
+      });
+      client.write(cmdLine + '\n');
+    });
+    
     client.on('data', (data) => {
       buffer += data.toString();
-      const newlineIndex = buffer.indexOf('\n');
       
-      if (newlineIndex !== -1) {
-        clearTimeout(timeoutId);
-        const responseStr = buffer.substring(0, newlineIndex);
-        
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+      
+      lines.forEach(line => {
+        if (line.trim()) {
+          try {
+            const result = JSON.parse(line.trim());
+            client.destroy();
+            resolve(result);
+          } catch (e) {
+            reject(new Error('Invalid response: ' + line));
+          }
+        }
+      });
+    });
+    
+    client.on('error', (err) => {
+      reject(err);
+    });
+    
+    client.on('close', () => {
+      if (buffer.trim()) {
         try {
-          const response = JSON.parse(responseStr);
-          client.end();
-          resolve(response);
-        } catch (err) {
-          client.end();
-          reject(new Error(`解析响应失败: ${err.message}`));
+          const result = JSON.parse(buffer.trim());
+          resolve(result);
+        } catch (e) {
+          reject(new Error('Invalid response: ' + buffer));
         }
       }
     });
-
-    client.on('error', (err) => {
-      clearTimeout(timeoutId);
-      reject(err);
-    });
-
+    
     // 超时处理
-    timeoutId = setTimeout(() => {
-      client.end();
-      reject(new Error('请求超时'));
-    }, TIMEOUT);
+    setTimeout(() => {
+      client.destroy();
+      reject(new Error('Command timeout'));
+    }, 30000);
   });
 }
 
 async function main() {
-  const args = process.argv.slice(2);
+  const projectId = process.argv[2];
+  const command = process.argv[3];
   
-  if (args.length < 2) {
-    console.error('用法: node engine-cli.js <project-id> <command> [params...]');
+  if (!projectId || !command) {
+    console.error('Usage: node engine-cli.js <project-id> <command> [--param value ...]');
     console.error('');
-    console.error('可用命令:');
-    console.error('  GET_STATE              - 获取当前状态');
-    console.error('  GET_CONTEXT            - 获取当前上下文');
-    console.error('  VALIDATE_PRECONDITIONS - 验证前置约束');
-    console.error('  RECORD_TOOL_CALL       - 记录工具调用');
-    console.error('  REGISTER_ARTIFACT      - 注册产出物');
-    console.error('  VALIDATE_ARTIFACT      - 验证产出物');
-    console.error('  DEFINE_CONSTRAINTS     - 定义下一阶段约束');
-    console.error('  SAVE_CHECKPOINT        - 保存检查点');
-    console.error('  TRIGGER_ROLLBACK       - 触发回滚');
-    console.error('  GET_AUDIT_LOG          - 获取审计日志');
-    console.error('  UPDATE_STATE           - 更新状态');
-    console.error('  HEALTH_CHECK           - 健康检查');
-    console.error('');
-    console.error('示例:');
-    console.error('  node engine-cli.js my-game GET_STATE');
-    console.error('  node engine-cli.js my-game VALIDATE_PRECONDITIONS --stageId "Stage-1-1"');
+    console.error('Commands:');
+    console.error('  HEALTH_CHECK');
+    console.error('  GET_STATE');
+    console.error('  SAVE_CHECKPOINT');
+    console.error('  RECORD_TOOL_CALL --toolName <name> --params <json> --result <result> --caller <caller>');
+    console.error('  DEFINE_CONSTRAINTS --stageId <id> --constraints <json>');
+    console.error('  VALIDATE_PRECONDITIONS --stageId <id>');
+    console.error('  REGISTER_ARTIFACT --path <path> --type <type> --createdBy <stage>');
+    console.error('  VALIDATE_ARTIFACT --path <path>');
+    console.error('  UPDATE_STATE --currentPhase <phase> --currentStage <stage>');
+    console.error('  TRIGGER_ROLLBACK --targetCheckpoint <id> --reason <reason>');
+    console.error('  GET_AUDIT_LOG --limit <n> --offset <n>');
     process.exit(1);
   }
-
-  const projectId = args[0];
-  const command = args[1];
   
-  // 解析参数
   const params = {};
-  for (let i = 2; i < args.length; i++) {
-    const arg = args[i];
-    if (arg.startsWith('--')) {
-      const key = arg.substring(2);
-      const nextArg = args[i + 1];
-      
-      if (nextArg && !nextArg.startsWith('--')) {
-        try {
-          // 尝试解析为JSON
-          params[key] = JSON.parse(nextArg);
-        } catch {
-          // 作为字符串
-          params[key] = nextArg;
-        }
-        i++; // 跳过下一个参数
-      } else {
-        params[key] = true;
-      }
+  for (let i = 4; i < process.argv.length; i += 2) {
+    if (process.argv[i].startsWith('--') && process.argv[i + 1]) {
+      params[process.argv[i].substring(2)] = process.argv[i + 1];
     }
   }
-
+  
   try {
-    const response = await sendCommand(projectId, command, params);
-    
-    // 格式化输出
-    console.log(JSON.stringify(response, null, 2));
-    
-    // 根据成功状态设置退出码
-    process.exit(response.success ? 0 : 1);
-    
-  } catch (err) {
-    console.error(JSON.stringify({
-      success: false,
-      error: 'CONNECTION_FAILED',
-      message: err.message
-    }, null, 2));
+    const result = await sendCommand(projectId, command, params);
+    console.log(JSON.stringify(result, null, 2));
+    process.exit(result.success ? 0 : 1);
+  } catch (error) {
+    console.error(JSON.stringify({ success: false, error: error.message }));
     process.exit(1);
   }
 }

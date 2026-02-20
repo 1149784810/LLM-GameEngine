@@ -31,11 +31,18 @@ function Write-Error($msg) { Write-Host $msg -ForegroundColor Red }
 function Write-Warn($msg) { Write-Host $msg -ForegroundColor Yellow }
 function Write-Info($msg) { Write-Host $msg -ForegroundColor Cyan }
 
-$scriptPath = $PSScriptRoot
-$preflightScript = Join-Path $scriptPath "preflight-check.ps1"
-$postAuditScript = Join-Path $scriptPath "post-execution-audit.ps1"
-$rollbackScript = Join-Path $scriptPath "rollback-trigger.ps1"
-$engineCli = Join-Path $scriptPath "engine-cli.js"
+$scriptRoot = $PSScriptRoot
+if (-not $scriptRoot) {
+    $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+}
+if (-not $scriptRoot) {
+    $scriptRoot = "."
+}
+
+$preflightScript = Join-Path $scriptRoot "preflight-check.ps1"
+$postAuditScript = Join-Path $scriptRoot "post-execution-audit.ps1"
+$rollbackScript = Join-Path $scriptRoot "rollback-trigger.ps1"
+$engineCli = Join-Path $scriptRoot "engine-cli.js"
 
 Write-Info "========================================"
 Write-Info "Execute Stage: $StageId"

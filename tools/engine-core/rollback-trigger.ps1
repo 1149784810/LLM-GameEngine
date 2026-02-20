@@ -30,7 +30,15 @@ Write-Info "Reason: $Reason"
 Write-Warn "========================================"
 Write-Host ""
 
-$engineCliPath = Join-Path $PSScriptRoot "engine-cli.js"
+$scriptRoot = $PSScriptRoot
+if (-not $scriptRoot) {
+    $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+}
+if (-not $scriptRoot) {
+    $scriptRoot = "."
+}
+
+$engineCliPath = Join-Path $scriptRoot "engine-cli.js"
 if (-not (Test-Path $engineCliPath)) {
     Write-Error "[ERROR] Engine CLI not found: $engineCliPath"
     exit 1
