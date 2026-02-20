@@ -2,7 +2,7 @@
 name: "project-experience-summarizer"
 version: "1.1.0"
 description: "项目经验总结器，在全栈开发完成后收集Bug反馈、解决问题并记录解决方案。"
-author: "engine-team"
+author: "Jianle He"
 created_at: "2024-02-19"
 updated_at: "2026-02-20"
 

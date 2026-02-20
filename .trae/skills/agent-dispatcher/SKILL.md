@@ -2,7 +2,7 @@
 name: "agent-dispatcher"
 version: "1.0.0"
 description: "智能体调度器，负责所有智能体的统一调度和中转，实现请求方与被调用方之间的通信中转。在项目流程确定后调用，确保所有智能体调度通过统一的中转站进行。"
-author: "engine-team"
+author: "Jianle He"
 created_at: "2024-02-19"
 updated_at: "2026-02-20"
 

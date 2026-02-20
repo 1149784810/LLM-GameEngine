@@ -2,7 +2,7 @@
 name: "qa-standards-manager"
 version: "2.1.1"
 description: "验收标准管理器，负责制定和管理游戏开发各阶段的验收标准。测试标准的唯一权威来源。核心原则：视觉测试(VT)与功能路径测试(FPT)合并执行，采用阻塞式流程，每一步必须截图验证后才能继续。Web游戏必须用浏览器全屏打开，全屏截图。"
-author: "engine-team"
+author: "Jianle He"
 created_at: "2024-02-19"
 updated_at: "2026-02-21"
 

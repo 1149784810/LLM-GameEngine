@@ -2,7 +2,7 @@
 name: "bug-tracker"
 version: "1.0.0"
 description: "Bug追踪管理器，负责记录、跟踪和管理项目中的所有Bug和问题。建立标准化的问题追踪机制，防止'按下葫芦浮起瓢'的情况发生。引用 qa-standards-manager 定义的回归测试(RT)标准。"
-author: "engine-team"
+author: "Jianle He"
 created_at: "2024-02-19"
 updated_at: "2026-02-20"
 

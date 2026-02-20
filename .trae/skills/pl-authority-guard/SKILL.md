@@ -2,7 +2,7 @@
 name: "pl-authority-guard"
 version: "1.0.0"
 description: "项目负责人(PL)权限守卫技能，强制执行PL职责边界，防止越权操作。在PL可能越权时自动触发，确保各司其职。"
-author: "engine-team"
+author: "Jianle He"
 created_at: "2024-02-19"
 updated_at: "2026-02-20"
 

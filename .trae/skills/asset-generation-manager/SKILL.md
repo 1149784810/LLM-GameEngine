@@ -2,7 +2,7 @@
 name: "asset-generation-manager"
 version: "1.0.0"
 description: "资产生成管理器，负责管理游戏艺术资产的生成流程。优先调用MCP图像生成工具（如LiblibAI），在MCP工具不可用时使用程序化生成方案。确保资产生成的高效性和一致性。"
-author: "engine-team"
+author: "Jianle He"
 created_at: "2024-02-19"
 updated_at: "2026-02-20"
 

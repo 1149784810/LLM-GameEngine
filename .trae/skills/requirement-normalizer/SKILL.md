@@ -2,7 +2,7 @@
 name: "requirement-normalizer"
 version: "1.0.0"
 description: "反复核对和澄清用户需求，将模糊需求转化为可执行的具体流程和步骤。在全栈开发启动前必须调用，确保需求足够清晰可拆解。"
-author: "engine-team"
+author: "Jianle He"
 created_at: "2024-02-19"
 updated_at: "2026-02-20"
 

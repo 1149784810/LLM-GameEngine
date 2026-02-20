@@ -2,7 +2,7 @@
 name: "output-normalizer"
 version: "1.1.0"
 description: "Determines the most appropriate output directory for files and assets based on context. Invoke when any agent needs to create files, write outputs, or save assets to disk."
-author: "engine-team"
+author: "Jianle He"
 created_at: "2024-02-19"
 updated_at: "2026-02-20"
 

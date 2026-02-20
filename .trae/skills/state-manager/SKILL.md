@@ -2,7 +2,7 @@
 name: "state-manager"
 version: "1.1.0"
 description: "状态管理器，负责维护游戏开发流程的完整状态、历史记录和快照回滚。确保流程状态可追溯、可回滚、数据一致性。"
-author: "engine-team"
+author: "Jianle He"
 created_at: "2024-02-19"
 updated_at: "2026-02-20"
 

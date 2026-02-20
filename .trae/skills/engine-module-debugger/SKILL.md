@@ -2,7 +2,7 @@
 name: "engine-module-debugger"
 version: "1.0.0"
 description: "追踪和记录全栈游戏开发引擎中所有技能模块的调用情况，包括调用节点、调用目的和调用频次。在游戏开发完成时输出详细的模块使用报告，帮助用户优化和迭代引擎。在引擎初始化时自动激活，贯穿整个开发流程。"
-author: "engine-team"
+author: "Jianle He"
 created_at: "2024-02-19"
 updated_at: "2026-02-20"
 

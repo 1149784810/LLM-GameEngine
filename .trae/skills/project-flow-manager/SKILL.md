@@ -2,7 +2,7 @@
 name: "project-flow-manager"
 version: "1.0.0"
 description: "项目流程管理器，负责阶段门控机制的具体实现、阻塞点管理和阶段完整性检查。引用 fullstack-game-engine 定义的流程，专注于门控执行。"
-author: "engine-team"
+author: "Jianle He"
 created_at: "2024-02-19"
 updated_at: "2026-02-20"
 

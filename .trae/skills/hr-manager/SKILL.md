@@ -2,7 +2,7 @@
 name: "hr-manager"
 version: "1.0.0"
 description: "人力资源管理器，负责根据 fullstack-game-engine 定义的流程进行团队角色分配、职责划分和工作负载均衡。引用标准流程，专注于人员分配执行。"
-author: "engine-team"
+author: "Jianle He"
 created_at: "2024-02-19"
 updated_at: "2026-02-20"
 

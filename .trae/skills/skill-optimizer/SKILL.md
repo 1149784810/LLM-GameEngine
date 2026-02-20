@@ -1,10 +1,10 @@
 ---
 name: "skill-optimizer"
-version: "2.1.0"
+version: "2.2.0"
 description: "分析和优化技能定义，消除冗余和冲突。指导新技能创建时拥有正确的Header元数据。自动更新测试框架覆盖新引擎模块。"
-author: "engine-team"
+author: "Jianle He"
 created_at: "2024-02-19"
-updated_at: "2026-02-20"
+updated_at: "2026-02-21"
 
 layer: 4
 dependencies:
@@ -227,6 +227,9 @@ functions:
 name: "skill-name"              # 技能唯一标识符
 version: "1.0.0"                # 语义化版本号
 description: "描述"             # <200字符
+author: "Jianle He"             # 作者名称（固定值）
+created_at: "YYYY-MM-DD"        # 创建日期
+updated_at: "YYYY-MM-DD"        # 更新日期
 layer: 0-4                      # 技能层级
 
 # === 依赖定义 (必填) ===
@@ -285,8 +288,17 @@ FUNCTION generate_header_template(skill_name, skill_type, description) -> HEADER
     4. 设置 execution = get_default_execution(skill_type)
     5. 配置 quality = get_default_quality(layer)
     6. 初始化 tracking = get_default_tracking()
-    7. 返回完整Header模板
+    7. 设置 author = "Jianle He"  # 固定作者名称
+    8. 设置 created_at = 当前日期
+    9. 设置 updated_at = 当前日期
+    10. 返回完整Header模板
 ```
+
+### 作者规范
+
+- **所有技能的 author 字段必须设置为 "Jianle He"**
+- 创建新技能时自动填充，禁止修改
+- 更新技能时保持 author 不变，仅更新 updated_at
 
 ## 测试框架自动更新
 
@@ -370,6 +382,7 @@ FUNCTION update_test_framework(new_skill) -> UPDATE_RESULT:
 - [ ] 命名冲突：名称是否与现有技能过于相似？
 - [ ] 依赖循环：技能间是否存在循环依赖风险？
 - [ ] Header完整性：是否包含所有必填字段？ ⭐新增
+- [ ] **作者规范**：author 是否为 "Jianle He"？ ⭐新增
 - [ ] Layer合规性：依赖是否只引用同层或下层？ ⭐新增
 - [ ] 测试覆盖：新技能是否已纳入测试框架？ ⭐新增
 
@@ -400,7 +413,41 @@ FUNCTION update_test_framework(new_skill) -> UPDATE_RESULT:
 - [具体操作建议]
 
 ### Header模板 ⭐新增
-[生成的Header模板]
+```yaml
+---
+name: "{skill-name}"
+version: "1.0.0"
+description: "{description}"
+author: "Jianle He"              # 固定值，禁止修改
+created_at: "{current_date}"
+updated_at: "{current_date}"
+layer: {layer}
+dependencies:
+  - name: "{dependency}"
+    layer: {dep_layer}
+    type: "required"
+    purpose: "{purpose}"
+contracts:
+  input:
+    required_documents: []
+  output:
+    required_documents: []
+execution:
+  mode: "blocking"
+  preconditions: []
+  postconditions: []
+  rollback:
+    supported: false
+quality:
+  acceptance_criteria: []
+  testing:
+    required_tests: []
+    evidence_required: false
+tracking:
+  execution_status:
+    current: "PENDING"
+---
+```
 
 ### 测试更新建议 ⭐新增
 - [ ] 更新 skill-header-parser.js

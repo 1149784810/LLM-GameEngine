@@ -2,7 +2,7 @@
 name: "flow-strategy"
 version: "1.0.0"
 description: "流程策略管理器，定义不同项目类型的流程策略，支持策略切换和动态调整。实现开闭原则，新增项目类型无需修改核心流程。"
-author: "engine-team"
+author: "Jianle He"
 created_at: "2024-02-19"
 updated_at: "2026-02-20"
 

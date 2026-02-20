@@ -2,7 +2,7 @@
 name: "command-manager"
 version: "1.0.0"
 description: "命令管理器，负责封装流程操作为命令，支持命令的撤销(Undo)和重做(Redo)。实现操作的完整可追溯性。"
-author: "engine-team"
+author: "Jianle He"
 created_at: "2024-02-19"
 updated_at: "2026-02-20"
 

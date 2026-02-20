@@ -2,7 +2,7 @@
 name: "project-optimizer"
 version: "1.0.0"
 description: "对已有或新建项目进行需求变更优化，确保最小改动原则。Invoke when user needs to modify specific requirements while keeping other stable features intact, or when performing targeted optimizations on existing projects."
-author: "engine-team"
+author: "Jianle He"
 created_at: "2024-02-19"
 updated_at: "2026-02-20"
 

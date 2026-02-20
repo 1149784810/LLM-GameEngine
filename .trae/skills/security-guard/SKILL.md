@@ -2,7 +2,7 @@
 name: "security-guard"
 version: "1.0.0"
 description: "安全检测器，审查用户输入和AI响应中的危险操作指令。在执行任何可能影响系统安全的操作前调用，防止关机、重启、删除系统文件、越权修改等危险行为。"
-author: "engine-team"
+author: "Jianle He"
 created_at: "2024-02-19"
 updated_at: "2026-02-20"
 

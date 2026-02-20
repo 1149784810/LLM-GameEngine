@@ -2,7 +2,7 @@
 name: "engine-test-framework"
 version: "2.3.0"
 description: "引擎测试框架，快速验证全栈游戏开发引擎的全部流程和技能Header元数据，无需运行完整游戏开发周期。包含QA测试阶段验证，确保测试严格度。测试报告输出到归档文件夹：reports/etf-v{框架版本}-engine-v{引擎版本}-{日期}/"
-author: "engine-team"
+author: "Jianle He"
 created_at: "2026-02-20"
 updated_at: "2026-02-20"
 

@@ -2,7 +2,7 @@
 name: "fullstack-engine-init"
 version: "1.0.0"
 description: "初始化全栈游戏开发引擎环境，检查必要技能依赖。在用户发出制作游戏需求时调用，验证全栈游戏开发引擎和需求规范器技能是否存在，自动扫描和加载所有游戏开发相关技能，并激活引擎模块调试器进行调用追踪。"
-author: "engine-team"
+author: "Jianle He"
 created_at: "2024-02-19"
 updated_at: "2026-02-20"
 

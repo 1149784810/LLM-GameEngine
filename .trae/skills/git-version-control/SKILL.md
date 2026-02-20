@@ -2,7 +2,7 @@
 name: "git-version-control"
 version: "1.0.0"
 description: "Manages all Git version control operations including commit, push, pull, branch management, and repository synchronization. Invoke when user needs any Git-related operations or version control tasks."
-author: "engine-team"
+author: "Jianle He"
 created_at: "2024-02-19"
 updated_at: "2026-02-20"
 

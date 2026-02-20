@@ -2,7 +2,7 @@
 name: "terminology-standard"
 version: "1.0.0"
 description: "全栈游戏开发术语标准库，定义所有技能必须使用的一致术语、符号系统和命名规范。所有技能开发或更新时必须首先查阅此技能确保术语一致性。"
-author: "engine-team"
+author: "Jianle He"
 created_at: "2024-02-19"
 updated_at: "2026-02-20"
 

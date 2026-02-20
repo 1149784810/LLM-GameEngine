@@ -2,7 +2,7 @@
 name: "contract-validator"
 version: "1.2.0"
 description: "契约验证器，负责定义和验证每个角色的输入输出契约。确保文档格式正确、内容完整，防止不合格输出流入下一阶段。包含反幻觉验证规则，强制QA角色提供测试证据。"
-author: "engine-team"
+author: "Jianle He"
 created_at: "2024-02-19"
 updated_at: "2026-02-20"
 

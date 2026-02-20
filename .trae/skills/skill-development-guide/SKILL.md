@@ -2,7 +2,7 @@
 name: "skill-development-guide"
 version: "1.0.0"
 description: "技能开发规范指南，定义创建新技能或更新现有技能时必须遵循的标准流程、引用规范和检查清单。确保技能库的一致性和无冗余。"
-author: "engine-team"
+author: "Jianle He"
 created_at: "2024-02-19"
 updated_at: "2026-02-20"
 

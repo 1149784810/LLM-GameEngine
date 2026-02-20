@@ -2,7 +2,7 @@
 name: "phase-stage-guard"
 version: "1.0.0"
 description: "流程阶段守卫，强制执行Stage顺序检查，防止跳过阶段。在每个Stage开始前必须调用，验证阻塞点状态和前置条件。"
-author: "engine-team"
+author: "Jianle He"
 created_at: "2026-02-20"
 updated_at: "2026-02-20"
 

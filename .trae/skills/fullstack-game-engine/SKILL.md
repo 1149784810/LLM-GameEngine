@@ -2,7 +2,7 @@
 name: "fullstack-game-engine"
 version: "1.0.0"
 description: "全栈游戏开发流程的唯一权威定义。定义完整的开发流程 Phase 0-5（含3个伴生阶段）、执行位、阻塞点和角色职责。所有其他技能引用流程时必须以本技能为准。"
-author: "engine-team"
+author: "Jianle He"
 created_at: "2024-02-19"
 updated_at: "2026-02-20"
 

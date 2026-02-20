@@ -2,7 +2,7 @@
 name: "event-bus"
 version: "1.0.0"
 description: "事件总线，负责接收和分发游戏开发流程事件，实现流程推进和角色调度的解耦。支持事件订阅、历史查询和回放。"
-author: "engine-team"
+author: "Jianle He"
 created_at: "2024-02-19"
 updated_at: "2026-02-20"
 
