@@ -1,7 +1,7 @@
 ---
 name: "contract-validator"
-version: "1.2.0"
-description: "契约验证器，负责定义和验证每个角色的输入输出契约。确保文档格式正确、内容完整，防止不合格输出流入下一阶段。包含反幻觉验证规则，强制QA角色提供测试证据。"
+version: "2.0.0"
+description: "契约验证器，负责定义和验证每个角色的输入输出契约。确保文档格式正确、内容完整，防止不合格输出流入下一阶段。包含反幻觉验证规则，强制QA角色提供测试证据。新增运行时验证层，确保契约在执行过程中被强制执行。"
 author: "Jianle He"
 created_at: "2024-02-19"
 updated_at: "2026-02-20"
@@ -20,6 +20,10 @@ dependencies:
     layer: 2
     type: "required"
     purpose: "状态管理集成"
+  - name: "event-bus"
+    layer: 2
+    type: "required"
+    purpose: "事件通知集成"
 
 contracts:
   input:
@@ -58,6 +62,7 @@ contracts:
 
 execution:
   mode: "blocking"
+  enforcement_level: "runtime"  # 运行时强制执行
   preconditions:
     - type: "BP_UNLOCKED"
       target: "BP-009"
@@ -65,10 +70,16 @@ execution:
     - type: "ROLE_COMPLETED"
       target: "ALL_PROGRAMMERS"
       description: "所有程序开发完成"
+    - type: "MONITOR_ACTIVE"
+      target: "qa-execution-monitor"
+      description: "执行监控器已激活"
   postconditions:
     - type: "BP_UNLOCK"
       target: "BP-011"
       description: "解锁QA测试完成阻塞点"
+    - type: "CONTRACT_VALIDATED"
+      target: "output"
+      description: "输出契约验证通过"
   rollback:
     supported: true
     strategy: "checkpoint"
@@ -76,12 +87,47 @@ execution:
     side_effects:
       - "删除无效的测试报告"
       - "重置QA角色状态"
+      - "清除运行时验证缓存"
     recovery_actions:
       - action: "DELETE_ARTIFACTS"
         target: "docs/05-测试文档/QA-TEST-REPORT-*.md"
       - action: "RESET_ROLE_STATUS"
         target: "QA-*"
         value: "PENDING"
+      - action: "CLEAR_RUNTIME_CACHE"
+        target: "contract-validation-cache"
+      - action: "NOTIFY_MONITOR"
+        target: "qa-execution-monitor"
+        message: "契约验证失败，停止监控"
+  
+  # 运行时验证配置
+  runtime_validation:
+    enabled: true
+    interception_points:
+      - "tool_call_before"
+      - "tool_call_after"
+      - "report_generation"
+      - "screenshot_capture"
+    validation_hooks:
+      - hook: "pre_execution"
+        validator: "validate_preconditions"
+        blocking: true
+      - hook: "during_execution"
+        validator: "validate_tool_calls"
+        blocking: true
+      - hook: "post_execution"
+        validator: "validate_output"
+        blocking: true
+    enforcement_rules:
+      - rule: "MANDATORY_SCREENSHOT"
+        condition: "qa_role == true"
+        action: "BLOCK_UNTIL_EVIDENCE"
+      - rule: "NO_HALLUCINATION"
+        condition: "always"
+        action: "REJECT_WITHOUT_EVIDENCE"
+      - rule: "TOOL_CALL_AUDIT"
+        condition: "always"
+        action: "LOG_AND_VALIDATE"
 
 quality:
   acceptance_criteria:
@@ -1789,6 +1835,635 @@ COMPREHENSIVE_VALIDATION_RESULT ::= {
 
 ---
 
+---
+
+## 运行时验证层 ⭐新增 (v2.0)
+
+### 架构概述
+
+运行时验证层确保契约在**执行过程中**被强制执行，而非仅在执行后检查。这是防止"文档定义规范，实际执行跳过"问题的关键机制。
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    运行时验证架构                             │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐     │
+│  │  执行前验证  │ → │  执行中监控  │ → │  执行后验证  │     │
+│  │ Pre-Exec    │    │ During-Exec │    │ Post-Exec   │     │
+│  └──────┬──────┘    └──────┬──────┘    └──────┬──────┘     │
+│         ↓                  ↓                  ↓            │
+│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐     │
+│  │前置条件检查  │    │工具调用拦截  │    │输出契约验证  │     │
+│  │依赖验证     │    │截图强制要求  │    │反幻觉检查   │     │
+│  │权限验证     │    │实时审计日志  │    │证据完整性   │     │
+│  └─────────────┘    └─────────────┘    └─────────────┘     │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │                 强制执行机制                          │   │
+│  │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌────────┐ │   │
+│  │  │拦截层   │→│验证层   │→│决策层   │→│执行层  │ │   │
+│  │  │Intercept│  │Validate │  │Decide  │  │Execute │ │   │
+│  │  └─────────┘  └─────────┘  └─────────┘  └────────┘ │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 三层验证模型
+
+#### 第一层：执行前验证 (Pre-Execution Validation)
+
+在执行任何操作之前，验证所有前置条件是否满足：
+
+```typescript
+PRE_EXECUTION_VALIDATION ::= {
+  // 前置条件验证
+  preconditions: {
+    type: "MANDATORY",
+    checks: [
+      { type: "BP_UNLOCKED", target: "BP-009" },
+      { type: "ROLE_COMPLETED", target: "ALL_PROGRAMMERS" },
+      { type: "MONITOR_ACTIVE", target: "qa-execution-monitor" }
+    ],
+    on_failure: "BLOCK_EXECUTION"
+  },
+  
+  // 输入契约验证
+  input_contract: {
+    type: "MANDATORY",
+    checks: [
+      { type: "DOCUMENT_EXISTS", pattern: "LT-TODOLIST-*.md" },
+      { type: "DOCUMENT_VALID", schema: "todolist-schema.json" },
+      { type: "REFERENCE_CORRECT", expected: "LT-TODOLIST" }
+    ],
+    on_failure: "BLOCK_EXECUTION"
+  },
+  
+  // 环境验证
+  environment: {
+    type: "MANDATORY",
+    checks: [
+      { type: "DIRECTORY_EXISTS", path: "tests/evidence/screenshots/" },
+      { type: "DIRECTORY_EXISTS", path: "tests/evidence/logs/" },
+      { type: "WRITE_PERMISSION", path: "tests/evidence/" }
+    ],
+    on_failure: "BLOCK_EXECUTION"
+  }
+}
+```
+
+**执行前验证函数：**
+
+```
+FUNCTION: validate_pre_execution(
+  role_id: ROLE_ID,
+  operation: OPERATION_TYPE,
+  context: EXECUTION_CONTEXT
+) → PRE_EXECUTION_RESULT
+
+输入:
+  - role_id: 执行角色ID
+  - operation: 操作类型 ("VT", "FT", "FPT", "REPORT")
+  - context: 执行上下文
+
+输出:
+  - PRE_EXECUTION_RESULT: {
+      can_proceed: BOOL,      // 是否可以继续执行
+      failed_checks: [...],   // 失败的检查项
+      blocking_reason: STRING // 阻止原因
+    }
+
+示例:
+  PL → contract-validator.validate_pre_execution(
+    role_id: "QA-TESTER",
+    operation: "VT",
+    context: {
+      target_project: "Clicker-Quest",
+      test_type: "Visual Testing",
+      evidence_dir: "tests/evidence/"
+    }
+  )
+  
+  // 场景1: 验证通过
+  返回: {
+    can_proceed: true,
+    failed_checks: [],
+    blocking_reason: null
+  }
+  
+  // 场景2: 截图目录不存在
+  返回: {
+    can_proceed: false,
+    failed_checks: [
+      {
+        type: "DIRECTORY_EXISTS",
+        target: "tests/evidence/screenshots/",
+        status: "FAILED",
+        reason: "目录不存在"
+      }
+    ],
+    blocking_reason: "截图证据目录未创建，无法执行视觉测试"
+  }
+```
+
+#### 第二层：执行中监控 (During-Execution Monitoring)
+
+在执行过程中实时监控，拦截不符合契约的操作：
+
+```typescript
+DURING_EXECUTION_MONITORING ::= {
+  // 工具调用拦截
+  tool_interception: {
+    enabled: true,
+    intercept_points: [
+      { tool: "Read", before: true, after: true },
+      { tool: "SearchReplace", before: true, after: true },
+      { tool: "Write", before: true, after: true },
+      { tool: "RunCommand", before: true, after: true },
+      { tool: "WebFetch", before: true, after: true },
+      { tool: "WebSearch", before: true, after: true }
+    ],
+    // QA角色特殊拦截
+    qa_special_intercepts: [
+      { 
+        tool: "Write", 
+        condition: "content.contains('测试通过')",
+        action: "VERIFY_SCREENSHOT_FIRST"
+      },
+      {
+        tool: "Write",
+        condition: "content.contains('100%') || content.contains('全部通过')",
+        action: "REQUIRE_EVIDENCE_EXPLANATION"
+      }
+    ]
+  },
+  
+  // 截图强制要求
+  screenshot_enforcement: {
+    enabled: true,
+    rules: [
+      {
+        trigger: "before_report_write",
+        condition: "report.contains('视觉测试') || report.contains('VT')",
+        requirement: "screenshot_count >= 3",
+        action: "BLOCK_UNTIL_SCREENSHOTS"
+      },
+      {
+        trigger: "before_pass_claim",
+        condition: "claim.contains('通过') || claim.contains('PASS')",
+        requirement: "evidence_exists",
+        action: "VERIFY_EVIDENCE"
+      }
+    ]
+  },
+  
+  // 实时审计日志
+  audit_logging: {
+    enabled: true,
+    log_events: [
+      { event: "TOOL_CALL", level: "INFO" },
+      { event: "SCREENSHOT_CAPTURED", level: "INFO" },
+      { event: "VALIDATION_PASSED", level: "INFO" },
+      { event: "VALIDATION_FAILED", level: "ERROR" },
+      { event: "CONTRACT_VIOLATION", level: "CRITICAL" }
+    ],
+    log_format: "[TIMESTAMP] [LEVEL] [ROLE] [EVENT] [DETAILS]"
+  }
+}
+```
+
+**执行中验证函数：**
+
+```
+FUNCTION: validate_during_execution(
+  role_id: ROLE_ID,
+  tool_call: TOOL_CALL,
+  context: EXECUTION_CONTEXT,
+  audit_log: AUDIT_LOG
+) → DURING_EXECUTION_RESULT
+
+输入:
+  - role_id: 执行角色ID
+  - tool_call: 工具调用信息 { tool: STRING, params: OBJECT }
+  - context: 执行上下文
+  - audit_log: 当前审计日志
+
+输出:
+  - DURING_EXECUTION_RESULT: {
+      allow_call: BOOL,       // 是否允许调用
+      modified_params: OBJECT,// 修改后的参数
+      require_action: STRING, // 要求的额外操作
+      log_entry: LOG_ENTRY    // 审计日志条目
+    }
+
+示例:
+  // 场景1: QA尝试写入测试报告，但未截图
+  PL → contract-validator.validate_during_execution(
+    role_id: "QA-TESTER",
+    tool_call: {
+      tool: "Write",
+      params: {
+        file_path: "QA-TEST-REPORT-v1.0.md",
+        content: "视觉测试通过，100%成功率..."
+      }
+    },
+    context: { phase: "VT", screenshot_count: 0 },
+    audit_log: [...]
+  )
+  
+  返回: {
+    allow_call: false,  // ❌ 阻止写入
+    modified_params: null,
+    require_action: "CAPTURE_SCREENSHOT_FIRST",
+    log_entry: {
+      timestamp: "2026-02-20T10:30:00Z",
+      level: "CRITICAL",
+      role: "QA-TESTER",
+      event: "CONTRACT_VIOLATION",
+      details: "尝试声称测试通过但未提供截图证据"
+    }
+  }
+  
+  // 场景2: 正常截图操作
+  PL → contract-validator.validate_during_execution(
+    role_call: { tool: "RunCommand", params: { command: "take_screenshot.ps1" } },
+    ...
+  )
+  
+  返回: {
+    allow_call: true,  // ✅ 允许调用
+    modified_params: null,
+    require_action: null,
+    log_entry: {
+      timestamp: "2026-02-20T10:31:00Z",
+      level: "INFO",
+      event: "SCREENSHOT_CAPTURED",
+      details: "截图已捕获"
+    }
+  }
+```
+
+#### 第三层：执行后验证 (Post-Execution Validation)
+
+在执行完成后，验证输出是否符合契约：
+
+```typescript
+POST_EXECUTION_VALIDATION ::= {
+  // 输出契约验证
+  output_contract: {
+    type: "MANDATORY",
+    checks: [
+      { type: "DOCUMENT_EXISTS", pattern: "QA-TEST-REPORT-*.md" },
+      { type: "DOCUMENT_SIZE", min: 4096 },
+      { type: "REQUIRED_SECTIONS", sections: [...] }
+    ]
+  },
+  
+  // 反幻觉验证
+  anti_hallucination: {
+    type: "MANDATORY",
+    checks: [
+      { type: "EVIDENCE_EXISTENCE", min_screenshots: 5 },
+      { type: "EVIDENCE_COVERAGE", min_coverage: 0.5 },
+      { type: "PASS_RATE_CHECK", max_pass_rate: 0.95 },
+      { type: "HALLUCINATION_INDICATORS", indicators: [...] }
+    ],
+    on_failure: "REJECT_AND_ROLLBACK"
+  },
+  
+  // 质量门槛验证
+  quality_gates: {
+    type: "MANDATORY",
+    checks: [
+      { metric: "evidence_coverage", threshold: 0.5 },
+      { metric: "test_authenticity", threshold: 0.8 }
+    ]
+  }
+}
+```
+
+**执行后验证函数：**
+
+```
+FUNCTION: validate_post_execution(
+  role_id: ROLE_ID,
+  artifacts: [ARTIFACT_PATH],
+  execution_log: EXECUTION_LOG
+) → POST_EXECUTION_RESULT
+
+输入:
+  - role_id: 执行角色ID
+  - artifacts: 产出物路径列表
+  - execution_log: 执行日志
+
+输出:
+  - POST_EXECUTION_RESULT: {
+      valid: BOOL,
+      passed_checks: [...],
+      failed_checks: [...],
+      rollback_required: BOOL,
+      recovery_actions: [...]
+    }
+```
+
+### 强制执行机制
+
+#### 拦截层 (Interception Layer)
+
+```typescript
+INTERCEPTION_LAYER ::= {
+  // 拦截点定义
+  interception_points: [
+    {
+      name: "tool_call_before",
+      trigger: "工具调用前",
+      handler: "intercept_tool_call"
+    },
+    {
+      name: "tool_call_after",
+      trigger: "工具调用后",
+      handler: "audit_tool_result"
+    },
+    {
+      name: "report_generation",
+      trigger: "生成报告前",
+      handler: "verify_evidence_completeness"
+    },
+    {
+      name: "screenshot_capture",
+      trigger: "截图捕获",
+      handler: "validate_screenshot_quality"
+    }
+  ],
+  
+  // 拦截处理器
+  handlers: {
+    intercept_tool_call: (call) => {
+      // 1. 检查是否是危险操作
+      if (is_dangerous(call)) return { action: "BLOCK" };
+      
+      // 2. 检查是否违反契约
+      const violation = check_contract_violation(call);
+      if (violation.found) {
+        return {
+          action: "BLOCK",
+          reason: violation.reason,
+          suggestion: violation.suggestion
+        };
+      }
+      
+      // 3. 允许执行
+      return { action: "ALLOW" };
+    },
+    
+    verify_evidence_completeness: (context) => {
+      // QA角色必须提供足够证据
+      if (context.role === "QA-TESTER") {
+        const evidence = count_evidence(context);
+        if (evidence.screenshots < 5) {
+          return {
+            action: "BLOCK",
+            reason: `截图证据不足: ${evidence.screenshots}/5`,
+            requirement: "CAPTURE_MORE_SCREENSHOTS"
+          };
+        }
+      }
+      return { action: "ALLOW" };
+    }
+  }
+}
+```
+
+#### 验证层 (Validation Layer)
+
+```typescript
+VALIDATION_LAYER ::= {
+  // 验证器注册
+  validators: [
+    { name: "precondition_validator", priority: 1 },
+    { name: "input_contract_validator", priority: 2 },
+    { name: "tool_call_validator", priority: 3 },
+    { name: "output_contract_validator", priority: 4 },
+    { name: "anti_hallucination_validator", priority: 5 }
+  ],
+  
+  // 验证链执行
+  execute_validation_chain: (context) => {
+    for (const validator of validators.sort(v => v.priority)) {
+      const result = validator.validate(context);
+      if (!result.valid) {
+        return {
+          valid: false,
+          failed_at: validator.name,
+          reason: result.reason
+        };
+      }
+    }
+    return { valid: true };
+  }
+}
+```
+
+#### 决策层 (Decision Layer)
+
+```typescript
+DECISION_LAYER ::= {
+  // 决策规则
+  decision_rules: [
+    {
+      condition: "violation.severity == 'CRITICAL'",
+      action: "BLOCK_AND_ROLLBACK",
+      notify: ["PL", "LT"]
+    },
+    {
+      condition: "violation.severity == 'HIGH'",
+      action: "BLOCK_AND_REQUIRE_FIX",
+      notify: ["PL"]
+    },
+    {
+      condition: "violation.severity == 'MEDIUM'",
+      action: "WARN_AND_LOG",
+      notify: []
+    },
+    {
+      condition: "violation.severity == 'LOW'",
+      action: "LOG_ONLY",
+      notify: []
+    }
+  ],
+  
+  // 决策执行
+  make_decision: (violation) => {
+    const rule = decision_rules.find(r => evaluate(r.condition, violation));
+    return {
+      action: rule.action,
+      notifications: rule.notify,
+      audit_log: create_audit_log(violation, rule)
+    };
+  }
+}
+```
+
+#### 执行层 (Execution Layer)
+
+```typescript
+EXECUTION_LAYER ::= {
+  // 执行动作
+  actions: {
+    BLOCK: (context) => {
+      // 阻止当前操作
+      throw new ContractViolationError(context.reason);
+    },
+    
+    BLOCK_AND_ROLLBACK: (context) => {
+      // 阻止操作并回滚
+      BLOCK(context);
+      state_manager.rollback_to_last_checkpoint();
+    },
+    
+    REQUIRE_ACTION: (context) => {
+      // 要求执行特定操作
+      return {
+        status: "PENDING_ACTION",
+        required_action: context.requirement,
+        message: `请先完成: ${context.requirement}`
+      };
+    },
+    
+    ALLOW: (context) => {
+      // 允许执行
+      return { status: "ALLOWED" };
+    }
+  },
+  
+  // 执行入口
+  execute: (decision) => {
+    const action = actions[decision.action];
+    return action(decision.context);
+  }
+}
+```
+
+### 运行时验证流程示例
+
+```
+场景: QA执行视觉测试(VT)
+
+开始执行
+    ↓
+┌─────────────────────────────────────────┐
+│ 第1层: 执行前验证                         │
+│ - 检查BP-009是否解锁                      │
+│ - 检查截图目录是否存在                     │
+│ - 检查LT-TODOLIST是否存在                 │
+└─────────────────────────────────────────┘
+    ↓ 验证通过
+启动qa-execution-monitor
+    ↓
+┌─────────────────────────────────────────┐
+│ 第2层: 执行中监控                         │
+│                                         │
+│ QA: "我要写入测试报告"                    │
+│ 拦截器: 检查是否有截图证据                 │
+│ 结果: ❌ 无截图证据                       │
+│ 动作: 🚫 阻止写入，要求先截图              │
+│                                         │
+│ QA: 执行截图工具                          │
+│ 拦截器: ✅ 允许                           │
+│ 审计: 记录截图事件                        │
+│                                         │
+│ QA: 再次尝试写入报告                      │
+│ 拦截器: ✅ 有截图证据，允许               │
+│ 审计: 记录写入事件                        │
+└─────────────────────────────────────────┘
+    ↓
+┌─────────────────────────────────────────┐
+│ 第3层: 执行后验证                         │
+│ - 验证报告格式                            │
+│ - 验证反幻觉指标                          │
+│ - 验证证据完整性                          │
+└─────────────────────────────────────────┘
+    ↓ 验证通过
+保存状态，解锁BP-011
+    ↓
+结束执行
+```
+
+### 与QA执行监控器的集成
+
+```typescript
+INTEGRATION_WITH_MONITOR ::= {
+  // 契约验证器调用监控器
+  pre_execution: () => {
+    // 激活监控器
+    qa_execution_monitor.activate({
+      target_role: "QA-TESTER",
+      validation_rules: get_contract("QA-TESTER").output.validation_rules,
+      enforcement_level: "STRICT"
+    });
+  },
+  
+  during_execution: (tool_call) => {
+    // 通知监控器检查
+    const monitor_result = qa_execution_monitor.intercept_tool_call(tool_call);
+    return monitor_result;
+  },
+  
+  post_execution: (artifacts) => {
+    // 获取监控器报告
+    const monitor_report = qa_execution_monitor.generate_report();
+    
+    // 结合契约验证
+    const contract_result = validate_output("QA-TESTER", artifacts);
+    
+    // 综合判断
+    return {
+      valid: monitor_report.valid && contract_result.valid,
+      monitor_report,
+      contract_result
+    };
+  }
+}
+```
+
+### 运行时验证API
+
+```
+// 1. 激活运行时验证
+FUNCTION: activate_runtime_validation(
+  role_id: ROLE_ID,
+  operation: OPERATION_TYPE,
+  options: VALIDATION_OPTIONS
+) → VALIDATION_SESSION
+
+// 2. 检查工具调用
+FUNCTION: check_tool_call(
+  session: VALIDATION_SESSION,
+  tool_call: TOOL_CALL
+) → TOOL_CALL_DECISION
+
+// 3. 验证证据
+FUNCTION: validate_evidence(
+  session: VALIDATION_SESSION,
+  evidence_type: EVIDENCE_TYPE,
+  evidence_path: PATH
+) → EVIDENCE_VALIDATION_RESULT
+
+// 4. 完成验证
+FUNCTION: finalize_validation(
+  session: VALIDATION_SESSION,
+  artifacts: [ARTIFACT_PATH]
+) → FINAL_VALIDATION_RESULT
+
+// 5. 获取验证报告
+FUNCTION: get_validation_report(
+  session: VALIDATION_SESSION
+) → VALIDATION_REPORT
+```
+
+---
+
 ## 版本记录
 
 | 版本 | 日期 | 变更内容 |
@@ -1796,3 +2471,4 @@ COMPREHENSIVE_VALIDATION_RESULT ::= {
 | v1.0 | 2024-02-19 | 初始版本，支持完整契约验证 |
 | v1.1 | 2026-02-19 | 增加反幻觉验证机制，新增QA-TESTER角色契约 |
 | v1.2 | 2026-02-20 | 增加输入验证规范（路径、命令、长度、格式、内容验证） |
+| v2.0 | 2026-02-20 | **重大更新**: 新增运行时验证层，三层验证模型（执行前/中/后），强制执行机制（拦截/验证/决策/执行），与QA执行监控器深度集成 |

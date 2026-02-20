@@ -9,6 +9,9 @@
  * 4. 验证验收标准完整性
  * 5. 验证经验库集成流程
  * 6. 验证回归测试要求
+ * 7. 验证强制执行机制 ⭐新增
+ * 8. 验证工具调用审计 ⭐新增
+ * 9. 验证QA执行监督器 ⭐新增
  */
 
 const { BaseTestSuite } = require('../core/base-test-suite');
@@ -198,6 +201,68 @@ const REGRESSION_REQUIREMENTS = {
     }
 };
 
+// ⭐新增：强制执行机制验证
+const ENFORCEMENT_MECHANISMS = {
+    'PRECONDITION_VALIDATION': {
+        name: '前置条件验证',
+        description: '执行QA测试前必须验证前置条件',
+        required: true
+    },
+    'TOOL_CALL_AUDIT': {
+        name: '工具调用审计',
+        description: '必须记录和验证所有必需工具调用',
+        required: true
+    },
+    'SCREENSHOT_VERIFICATION': {
+        name: '截图验证',
+        description: '必须使用LS验证截图文件存在',
+        required: true
+    },
+    'OUTPUT_VALIDATION': {
+        name: '输出验证',
+        description: '生成报告前必须验证输出契约',
+        required: true
+    },
+    'ANTI_HALLUCINATION_CHECK': {
+        name: '反幻觉检查',
+        description: '必须执行反幻觉自检清单',
+        required: true
+    },
+    'ROLLBACK_MECHANISM': {
+        name: '回滚机制',
+        description: '违规时必须触发回滚',
+        required: true
+    }
+};
+
+// ⭐新增：必需工具调用清单
+const MANDATORY_TOOL_CALLS = {
+    'SCREENSHOT_TOOL': {
+        name: 'take_screenshot.ps1',
+        description: '截图工具',
+        minCalls: 1,
+        severity: 'CRITICAL'
+    },
+    'LS_VERIFICATION': {
+        name: 'LS screenshots/',
+        description: '验证截图存在',
+        minCalls: 1,
+        severity: 'CRITICAL'
+    },
+    'WINDOW_MANAGER': {
+        name: 'window-manager.ps1',
+        description: '窗口管理',
+        minCalls: 0,
+        severity: 'HIGH'
+    },
+    'WEB_SERVER': {
+        name: 'python -m http.server',
+        description: '启动Web服务器',
+        minCalls: 0,
+        severity: 'HIGH'
+    }
+};
+
 class QAStageTestSuite extends BaseTestSuite {
     
     constructor(options = {}) {
@@ -230,12 +295,226 @@ class QAStageTestSuite extends BaseTestSuite {
         results.push(...this.testQAExecutionChecklist(content));
         results.push(...this.testProhibitedBehaviors(content));
         
+        // ⭐新增：强制执行机制验证
+        results.push(...this.testEnforcementMechanisms(content));
+        results.push(...this.testMandatoryToolCalls(content));
+        results.push(...this.testQAExecutionMonitor(skills));
+        
         const fullstackEngine = skills.get('fullstack-game-engine');
         if (fullstackEngine) {
             results.push(...this.testQAStageInFlow(fullstackEngine.content));
         }
         
         return this.aggregateResults(results);
+    }
+    
+    // ⭐新增：验证强制执行机制
+    testEnforcementMechanisms(content) {
+        const results = [];
+        
+        const enforcementPattern = /强制执行|强制验证|强制工具调用|强制执行架构/i;
+        const hasEnforcementSection = enforcementPattern.test(content);
+        
+        results.push(this.createResult(
+            'ENFORCEMENT_SECTION_EXISTS',
+            'qa-standards-manager',
+            hasEnforcementSection,
+            hasEnforcementSection ? 'INFO' : 'ERROR',
+            hasEnforcementSection
+                ? '强制执行章节已定义'
+                : '强制执行章节未定义，这是防止跳过关键步骤的关键机制'
+        ));
+        
+        for (const [mechanismId, mechanismConfig] of Object.entries(ENFORCEMENT_MECHANISMS)) {
+            const foundKeywords = mechanismConfig.description.split(/[,，]/).filter(kw => 
+                content.includes(kw.trim())
+            );
+            
+            const mechanismFound = foundKeywords.length > 0 || 
+                content.includes(mechanismConfig.name);
+            
+            results.push(this.createResult(
+                `ENFORCEMENT_${mechanismId}`,
+                'qa-standards-manager',
+                mechanismFound,
+                mechanismConfig.required ? (mechanismFound ? 'INFO' : 'ERROR') : 'WARNING',
+                mechanismFound
+                    ? `强制执行机制"${mechanismConfig.name}"已定义`
+                    : `强制执行机制"${mechanismConfig.name}"未定义`
+            ));
+        }
+        
+        // 验证前置条件验证
+        const preconditionPattern = /前置验证|前置条件|Step 0/i;
+        const hasPrecondition = preconditionPattern.test(content);
+        
+        results.push(this.createResult(
+            'ENFORCEMENT_PRECONDITION_VALIDATION',
+            'qa-standards-manager',
+            hasPrecondition,
+            hasPrecondition ? 'INFO' : 'ERROR',
+            hasPrecondition
+                ? '前置验证步骤已定义'
+                : '前置验证步骤未定义，必须在Step 1前验证前置条件'
+        ));
+        
+        // 验证输出验证步骤
+        const outputValidationPattern = /输出验证|Step 4/i;
+        const hasOutputValidation = outputValidationPattern.test(content);
+        
+        results.push(this.createResult(
+            'ENFORCEMENT_OUTPUT_VALIDATION',
+            'qa-standards-manager',
+            hasOutputValidation,
+            hasOutputValidation ? 'INFO' : 'ERROR',
+            hasOutputValidation
+                ? '输出验证步骤已定义'
+                : '输出验证步骤未定义，必须在生成报告前验证输出'
+        ));
+        
+        // 验证回滚机制
+        const rollbackPattern = /回滚|rollback|ROLLBACK/i;
+        const hasRollback = rollbackPattern.test(content);
+        
+        results.push(this.createResult(
+            'ENFORCEMENT_ROLLBACK_MECHANISM',
+            'qa-standards-manager',
+            hasRollback,
+            hasRollback ? 'INFO' : 'ERROR',
+            hasRollback
+                ? '回滚机制已定义'
+                : '回滚机制未定义，违规时无法触发回滚'
+        ));
+        
+        return results;
+    }
+    
+    // ⭐新增：验证必需工具调用
+    testMandatoryToolCalls(content) {
+        const results = [];
+        
+        const mandatoryToolsPattern = /强制工具调用|必需工具|MANDATORY|强制.*调用/i;
+        const hasMandatoryToolsSection = mandatoryToolsPattern.test(content);
+        
+        results.push(this.createResult(
+            'MANDATORY_TOOLS_SECTION_EXISTS',
+            'qa-standards-manager',
+            hasMandatoryToolsSection,
+            hasMandatoryToolsSection ? 'INFO' : 'ERROR',
+            hasMandatoryToolsSection
+                ? '强制工具调用章节已定义'
+                : '强制工具调用章节未定义'
+        ));
+        
+        for (const [toolId, toolConfig] of Object.entries(MANDATORY_TOOL_CALLS)) {
+            const toolPattern = new RegExp(toolConfig.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+            const found = toolPattern.test(content);
+            
+            results.push(this.createResult(
+                `MANDATORY_TOOL_${toolId}`,
+                'qa-standards-manager',
+                found,
+                toolConfig.severity === 'CRITICAL' ? (found ? 'INFO' : 'ERROR') : 'WARNING',
+                found
+                    ? `必需工具"${toolConfig.name}"已定义`
+                    : `必需工具"${toolConfig.name}"未定义`
+            ));
+        }
+        
+        // 验证take_screenshot.ps1的强制要求
+        const screenshotMandatoryPattern = /take_screenshot\.ps1.*必须|必须.*take_screenshot|强制.*截图/i;
+        const hasScreenshotMandatory = screenshotMandatoryPattern.test(content);
+        
+        results.push(this.createResult(
+            'SCREENSHOT_TOOL_MANDATORY',
+            'qa-standards-manager',
+            hasScreenshotMandatory,
+            hasScreenshotMandatory ? 'INFO' : 'ERROR',
+            hasScreenshotMandatory
+                ? '截图工具被标记为强制调用'
+                : '截图工具未被明确标记为强制调用'
+        ));
+        
+        // 验证LS验证的强制要求
+        const lsMandatoryPattern = /LS.*screenshots.*必须|必须.*LS.*验证|强制.*LS/i;
+        const hasLsMandatory = lsMandatoryPattern.test(content);
+        
+        results.push(this.createResult(
+            'LS_VERIFICATION_MANDATORY',
+            'qa-standards-manager',
+            hasLsMandatory,
+            hasLsMandatory ? 'INFO' : 'ERROR',
+            hasLsMandatory
+                ? 'LS验证被标记为强制调用'
+                : 'LS验证未被明确标记为强制调用'
+        ));
+        
+        return results;
+    }
+    
+    // ⭐新增：验证QA执行监督器
+    testQAExecutionMonitor(skills) {
+        const results = [];
+        
+        const monitor = skills.get('qa-execution-monitor');
+        
+        results.push(this.createResult(
+            'QA_EXECUTION_MONITOR_EXISTS',
+            'qa-execution-monitor',
+            !!monitor,
+            !!monitor ? 'INFO' : 'ERROR',
+            !!monitor
+                ? 'QA执行监督器技能已存在'
+                : 'QA执行监督器技能不存在，无法强制执行QA测试'
+        ));
+        
+        if (monitor) {
+            const content = monitor.content;
+            
+            // 验证监督器功能
+            const monitoringPattern = /实时监控|工具调用追踪|报告生成拦截/i;
+            const hasMonitoring = monitoringPattern.test(content);
+            
+            results.push(this.createResult(
+                'MONITOR_REAL_TIME_TRACKING',
+                'qa-execution-monitor',
+                hasMonitoring,
+                hasMonitoring ? 'INFO' : 'ERROR',
+                hasMonitoring
+                    ? '实时监控功能已定义'
+                    : '实时监控功能未定义'
+            ));
+            
+            // 验证拦截机制
+            const interceptionPattern = /拦截|阻止.*生成|不通过则/i;
+            const hasInterception = interceptionPattern.test(content);
+            
+            results.push(this.createResult(
+                'MONITOR_INTERCEPTION_MECHANISM',
+                'qa-execution-monitor',
+                hasInterception,
+                hasInterception ? 'INFO' : 'ERROR',
+                hasInterception
+                    ? '报告生成拦截机制已定义'
+                    : '报告生成拦截机制未定义'
+            ));
+            
+            // 验证违规处理
+            const violationPattern = /违规|violation|CRITICAL/i;
+            const hasViolationHandling = violationPattern.test(content);
+            
+            results.push(this.createResult(
+                'MONITOR_VIOLATION_HANDLING',
+                'qa-execution-monitor',
+                hasViolationHandling,
+                hasViolationHandling ? 'INFO' : 'ERROR',
+                hasViolationHandling
+                    ? '违规处理机制已定义'
+                    : '违规处理机制未定义'
+            ));
+        }
+        
+        return results;
     }
     
     testTestTypesDefinition(content) {
@@ -383,7 +662,7 @@ class QAStageTestSuite extends BaseTestSuite {
             ));
         }
         
-        const screenshotPathPattern = /tests\/evidence\/screenshots|screenshots\/ft|screenshots\/vt/i;
+        const screenshotPathPattern = /tests\/evidence\/screenshots|screenshots\/ft|screenshots\/vt|projects\/.*\/screenshots/i;
         const hasScreenshotPath = screenshotPathPattern.test(content);
         
         results.push(this.createResult(
@@ -528,13 +807,11 @@ class QAStageTestSuite extends BaseTestSuite {
         ));
         
         for (const [reqId, reqConfig] of Object.entries(REGRESSION_REQUIREMENTS)) {
-            // 扩展匹配模式，支持多种格式
             const patterns = [
                 new RegExp(reqConfig.name, 'i'),
                 new RegExp(reqConfig.description.substring(0, 10), 'i'),
                 new RegExp(reqId, 'i'),
-                // 支持 RR-001 格式
-                new RegExp(`RR-\\d+.*${reqConfig.name}`, 'i')
+                new RegExp(`RR-\d+.*${reqConfig.name}`, 'i')
             ];
             
             const found = patterns.some(pattern => pattern.test(content));
@@ -675,6 +952,34 @@ class QAStageTestSuite extends BaseTestSuite {
                 : '建议明确禁止程序员自测'
         ));
         
+        // ⭐新增：验证"禁止跳过截图"
+        const noSkipScreenshotPattern = /禁止跳过.*截图|禁止.*跳过.*截图|截图.*禁止跳过/i;
+        const hasNoSkipScreenshot = noSkipScreenshotPattern.test(content);
+        
+        results.push(this.createResult(
+            'PROHIBITED_SKIP_SCREENSHOT',
+            'qa-standards-manager',
+            hasNoSkipScreenshot,
+            hasNoSkipScreenshot ? 'INFO' : 'ERROR',
+            hasNoSkipScreenshot
+                ? '禁止跳过截图已明确定义'
+                : '必须明确禁止跳过截图步骤'
+        ));
+        
+        // ⭐新增：验证"禁止无截图声称通过"
+        const noClaimWithoutScreenshotPattern = /禁止.*无截图.*声称|无截图.*禁止.*声称|禁止声称.*通过.*无截图/i;
+        const hasNoClaimWithoutScreenshot = noClaimWithoutScreenshotPattern.test(content);
+        
+        results.push(this.createResult(
+            'PROHIBITED_CLAIM_WITHOUT_SCREENSHOT',
+            'qa-standards-manager',
+            hasNoClaimWithoutScreenshot,
+            hasNoClaimWithoutScreenshot ? 'INFO' : 'ERROR',
+            hasNoClaimWithoutScreenshot
+                ? '禁止无截图声称测试通过已明确定义'
+                : '必须明确禁止无截图声称测试通过'
+        ));
+        
         return results;
     }
     
@@ -750,6 +1055,31 @@ class QAStageTestSuite extends BaseTestSuite {
                     ? '反幻觉机制已定义'
                     : '反幻觉机制未定义'
             });
+            
+            // ⭐新增：验证强制执行机制
+            const hasEnforcement = content.includes('强制执行');
+            results.push({
+                test: 'ENFORCEMENT_DEFINED',
+                passed: hasEnforcement,
+                severity: hasEnforcement ? 'INFO' : 'ERROR',
+                message: hasEnforcement
+                    ? '强制执行机制已定义'
+                    : '强制执行机制未定义'
+            });
+            
+            // ⭐新增：验证必需工具调用
+            const hasMandatoryTools = content.includes('take_screenshot.ps1') && 
+                                      content.includes('LS') &&
+                                      content.includes('必须');
+            results.push({
+                test: 'MANDATORY_TOOLS_DEFINED',
+                passed: hasMandatoryTools,
+                severity: hasMandatoryTools ? 'INFO' : 'ERROR',
+                message: hasMandatoryTools
+                    ? '必需工具调用已定义'
+                    : '必需工具调用未定义'
+            });
+            
         } else if (skillName === 'fullstack-game-engine') {
             const content = skillData.content;
             
@@ -762,6 +1092,28 @@ class QAStageTestSuite extends BaseTestSuite {
                     ? 'QA测试阶段已嵌入流程'
                     : 'QA测试阶段未嵌入流程'
             });
+        } else if (skillName === 'qa-execution-monitor') {
+            const content = skillData.content;
+            
+            const hasMonitoring = content.includes('监控') || content.includes('监督');
+            results.push({
+                test: 'MONITORING_DEFINED',
+                passed: hasMonitoring,
+                severity: hasMonitoring ? 'INFO' : 'ERROR',
+                message: hasMonitoring
+                    ? '监控机制已定义'
+                    : '监控机制未定义'
+            });
+            
+            const hasInterception = content.includes('拦截') || content.includes('阻止');
+            results.push({
+                test: 'INTERCEPTION_DEFINED',
+                passed: hasInterception,
+                severity: hasInterception ? 'INFO' : 'ERROR',
+                message: hasInterception
+                    ? '拦截机制已定义'
+                    : '拦截机制未定义'
+            });
         } else {
             return {
                 skill: skillName,
@@ -770,7 +1122,7 @@ class QAStageTestSuite extends BaseTestSuite {
                     test: 'QA_STAGE_SKIP',
                     passed: true,
                     severity: 'INFO',
-                    message: 'QA测试阶段验证主要适用于qa-standards-manager和fullstack-game-engine技能'
+                    message: 'QA测试阶段验证主要适用于qa-standards-manager、qa-execution-monitor和fullstack-game-engine技能'
                 }]
             };
         }
@@ -790,5 +1142,7 @@ module.exports = {
     EVIDENCE_REQUIREMENTS,
     ACCEPTANCE_CRITERIA,
     EXPERIENCE_INTEGRATION,
-    REGRESSION_REQUIREMENTS
+    REGRESSION_REQUIREMENTS,
+    ENFORCEMENT_MECHANISMS,
+    MANDATORY_TOOL_CALLS
 };
