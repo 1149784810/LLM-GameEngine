@@ -1,0 +1,778 @@
+/**
+ * Component Styles - 组件样式文件
+ * @author LP -> UIP-1
+ */
+
+/* 商品卡片 */
+.shop-card {
+    display: flex;
+    align-items: center;
+    padding: var(--spacing-md);
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-card);
+    margin-bottom: var(--spacing-md);
+    border: 2px solid transparent;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.shop-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.shop-card:active {
+    transform: translateY(0);
+}
+
+.shop-card.purchasable {
+    border-color: var(--color-success);
+}
+
+.shop-card.not-affordable {
+    border-color: var(--color-error);
+    opacity: 0.7;
+}
+
+.shop-card.max-level {
+    border-color: var(--color-primary);
+}
+
+.shop-card.locked {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.shop-card-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 32px;
+    margin-right: var(--spacing-md);
+    flex-shrink: 0;
+}
+
+.shop-card-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.shop-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-xs);
+}
+
+.shop-card-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--color-text-main);
+}
+
+.shop-card-level {
+    font-size: 14px;
+    color: var(--color-primary);
+    font-weight: 500;
+}
+
+.shop-card-desc {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--spacing-sm);
+    line-height: 1.4;
+}
+
+.shop-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.shop-card-price {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+.shop-card-buy-btn {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--color-success);
+    border: none;
+    border-radius: var(--radius-btn);
+    color: var(--color-text-main);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 80px;
+}
+
+.shop-card-buy-btn:hover {
+    background: #45a049;
+}
+
+.shop-card-buy-btn:active {
+    transform: scale(0.95);
+}
+
+.shop-card-buy-btn:disabled {
+    background: var(--color-text-disabled);
+    cursor: not-allowed;
+}
+
+.shop-card-max-label {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--color-primary);
+    border-radius: var(--radius-btn);
+    color: var(--color-bg-main);
+    font-size: 14px;
+    font-weight: 700;
+}
+
+/* 道具卡片 */
+.item-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--spacing-md);
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-card);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+}
+
+.item-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border-color: var(--color-primary);
+}
+
+.item-card:active {
+    transform: scale(0.95);
+}
+
+.item-card.empty {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.item-card.empty:hover {
+    transform: none;
+    box-shadow: none;
+    border-color: transparent;
+}
+
+.item-card-icon {
+    font-size: 48px;
+    margin-bottom: var(--spacing-sm);
+    line-height: 1;
+}
+
+.item-card-name {
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: var(--spacing-xs);
+    color: var(--color-text-main);
+    line-height: 1.2;
+}
+
+.item-card-count {
+    font-size: 14px;
+    color: var(--color-primary);
+    font-weight: 500;
+}
+
+/* 成就卡片 */
+.achievement-card {
+    display: flex;
+    align-items: center;
+    padding: var(--spacing-md);
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-card);
+    margin-bottom: var(--spacing-md);
+    border: 2px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.achievement-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.achievement-card.unlocked {
+    border-color: var(--color-success);
+}
+
+.achievement-card.claimed {
+    opacity: 0.6;
+}
+
+.achievement-card-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 32px;
+    margin-right: var(--spacing-md);
+    flex-shrink: 0;
+}
+
+.achievement-card-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.achievement-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-xs);
+}
+
+.achievement-card-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--color-text-main);
+}
+
+.achievement-card-status {
+    font-size: 12px;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-btn);
+    font-weight: 500;
+}
+
+.achievement-card-status.unlocked {
+    background: var(--color-success);
+    color: var(--color-text-main);
+}
+
+.achievement-card-status.claimed {
+    background: var(--color-text-disabled);
+    color: var(--color-text-main);
+}
+
+.achievement-card-desc {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--spacing-sm);
+    line-height: 1.4;
+}
+
+.achievement-card-progress {
+    width: 100%;
+    height: 8px;
+    background: var(--color-bg-tertiary);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: var(--spacing-xs);
+}
+
+.achievement-card-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+    transition: width 0.3s ease;
+    border-radius: 4px;
+}
+
+.achievement-card-progress-text {
+    font-size: 12px;
+    color: var(--color-primary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.achievement-card-reward {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+}
+
+/* 进度概览 */
+.achievement-progress {
+    display: flex;
+    justify-content: space-around;
+    padding: var(--spacing-md);
+    background: var(--color-bg-secondary);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.progress-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.progress-label {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+}
+
+.progress-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+/* 商店金币显示 */
+.shop-gold-display {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-lg);
+    background: var(--color-bg-secondary);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.shop-gold-display .gold-icon {
+    font-size: 32px;
+    line-height: 1;
+}
+
+.shop-gold-display #shop-gold-amount {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+/* 弹窗内容样式 */
+.modal-content .achievement-icon,
+.modal-content .item-icon {
+    font-size: 64px;
+    margin-bottom: var(--spacing-md);
+    line-height: 1;
+}
+
+.modal-effect {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--color-primary);
+    margin-bottom: var(--spacing-lg);
+}
+
+.modal-reward-text {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--spacing-lg);
+}
+
+.modal-reward-text span {
+    color: var(--color-primary);
+    font-weight: 500;
+}
+
+/* 空状态提示 */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-xl);
+    text-align: center;
+    color: var(--color-text-secondary);
+}
+
+.empty-state-icon {
+    font-size: 64px;
+    margin-bottom: var(--spacing-md);
+    opacity: 0.5;
+}
+
+.empty-state-text {
+    font-size: 16px;
+    margin-bottom: var(--spacing-sm);
+}
+
+.empty-state-hint {
+    font-size: 12px;
+    opacity: 0.7;
+}
+
+/* 加载状态 */
+.loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-xl);
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--color-bg-tertiary);
+    border-top-color: var(--color-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.loading-text {
+    margin-top: var(--spacing-md);
+    font-size: 14px;
+    color: var(--color-text-secondary);
+}
+
+/* 分隔线 */
+.divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: var(--spacing-md) 0;
+}
+
+/* 徽章 */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 700;
+    min-width: 20px;
+}
+
+.badge-primary {
+    background: var(--color-primary);
+    color: var(--color-bg-main);
+}
+
+.badge-success {
+    background: var(--color-success);
+    color: var(--color-text-main);
+}
+
+.badge-error {
+    background: var(--color-error);
+    color: var(--color-text-main);
+}
+
+/* 工具提示 */
+.tooltip {
+    position: relative;
+}
+
+.tooltip::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-btn);
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    pointer-events: none;
+    z-index: 100;
+}
+
+.tooltip:hover::after {
+    opacity: 1;
+    visibility: visible;
+    bottom: calc(100% + 8px);
+}
+
+/* 进度条组件 */
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: var(--color-bg-tertiary);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+    transition: width 0.3s ease;
+    border-radius: 4px;
+}
+
+/* 标签组件 */
+.tag {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-secondary);
+}
+
+.tag + .tag {
+    margin-left: var(--spacing-xs);
+}
+
+/* 响应式组件调整 */
+@media screen and (max-width: 374px) {
+    .shop-card-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 28px;
+    }
+    
+    .shop-card-name {
+        font-size: 14px;
+    }
+    
+    .shop-card-desc {
+        font-size: 11px;
+    }
+    
+    .item-card-icon {
+        font-size: 40px;
+    }
+    
+    .item-card-name {
+        font-size: 11px;
+    }
+    
+    .achievement-card-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 28px;
+    }
+    
+    .achievement-card-name {
+        font-size: 14px;
+    }
+}
+
+@media screen and (min-width: 414px) and (max-width: 767px) {
+    .shop-card-icon {
+        width: 56px;
+        height: 56px;
+        font-size: 36px;
+    }
+    
+    .item-card-icon {
+        font-size: 56px;
+    }
+    
+    .achievement-card-icon {
+        width: 56px;
+        height: 56px;
+        font-size: 36px;
+    }
+}
+
+@media screen and (min-width: 768px) {
+    .items-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    
+    .shop-card {
+        padding: var(--spacing-lg);
+    }
+    
+    .shop-card-icon {
+        width: 64px;
+        height: 64px;
+        font-size: 40px;
+    }
+    
+    .shop-card-name {
+        font-size: 18px;
+    }
+    
+    .shop-card-desc {
+        font-size: 14px;
+    }
+    
+    .shop-card-price {
+        font-size: 18px;
+    }
+    
+    .shop-card-buy-btn {
+        padding: var(--spacing-sm) var(--spacing-lg);
+        font-size: 16px;
+        min-width: 100px;
+    }
+    
+    .item-card {
+        padding: var(--spacing-lg);
+    }
+    
+    .item-card-icon {
+        font-size: 56px;
+    }
+    
+    .item-card-name {
+        font-size: 14px;
+    }
+    
+    .item-card-count {
+        font-size: 16px;
+    }
+    
+    .achievement-card {
+        padding: var(--spacing-lg);
+    }
+    
+    .achievement-card-icon {
+        width: 64px;
+        height: 64px;
+        font-size: 40px;
+    }
+    
+    .achievement-card-name {
+        font-size: 18px;
+    }
+    
+    .achievement-card-desc {
+        font-size: 14px;
+    }
+    
+    .achievement-progress {
+        padding: var(--spacing-lg);
+    }
+    
+    .progress-label {
+        font-size: 14px;
+    }
+    
+    .progress-value {
+        font-size: 20px;
+    }
+    
+    .shop-gold-display {
+        padding: var(--spacing-xl);
+    }
+    
+    .shop-gold-display .gold-icon {
+        font-size: 40px;
+    }
+    
+    .shop-gold-display #shop-gold-amount {
+        font-size: 40px;
+    }
+}
+
+@media screen and (min-width: 1024px) {
+    .items-grid {
+        grid-template-columns: repeat(5, 1fr);
+    }
+    
+    .shop-card {
+        padding: var(--spacing-lg) var(--spacing-xl);
+    }
+    
+    .shop-card-icon {
+        width: 72px;
+        height: 72px;
+        font-size: 48px;
+    }
+    
+    .shop-card-name {
+        font-size: 20px;
+    }
+    
+    .shop-card-desc {
+        font-size: 16px;
+    }
+    
+    .shop-card-price {
+        font-size: 20px;
+    }
+    
+    .shop-card-buy-btn {
+        padding: var(--spacing-md) var(--spacing-xl);
+        font-size: 18px;
+        min-width: 120px;
+    }
+    
+    .item-card {
+        padding: var(--spacing-xl);
+    }
+    
+    .item-card-icon {
+        font-size: 64px;
+    }
+    
+    .item-card-name {
+        font-size: 16px;
+    }
+    
+    .item-card-count {
+        font-size: 18px;
+    }
+    
+    .achievement-card {
+        padding: var(--spacing-lg) var(--spacing-xl);
+    }
+    
+    .achievement-card-icon {
+        width: 80px;
+        height: 80px;
+        font-size: 48px;
+    }
+    
+    .achievement-card-name {
+        font-size: 20px;
+    }
+    
+    .achievement-card-desc {
+        font-size: 16px;
+    }
+    
+    .achievement-card-progress {
+        height: 10px;
+    }
+    
+    .achievement-card-progress-text {
+        font-size: 14px;
+    }
+    
+    .achievement-card-reward {
+        font-size: 14px;
+    }
+    
+    .achievement-progress {
+        padding: var(--spacing-xl);
+    }
+    
+    .progress-label {
+        font-size: 16px;
+    }
+    
+    .progress-value {
+        font-size: 24px;
+    }
+    
+    .shop-gold-display {
+        padding: var(--spacing-xl) var(--spacing-xl);
+    }
+    
+    .shop-gold-display .gold-icon {
+        font-size: 48px;
+    }
+    
+    .shop-gold-display #shop-gold-amount {
+        font-size: 48px;
+    }
+}
+
+@media screen and (min-width: 1440px) {
+    .items-grid {
+        grid-template-columns: repeat(6, 1fr);
+    }
+}

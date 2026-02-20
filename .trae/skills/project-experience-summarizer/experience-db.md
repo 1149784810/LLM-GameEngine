@@ -1413,3 +1413,53 @@
 - **记录时间**: 2026-02-20
 - **严重程度**: **CRITICAL** - 必须在所有QA测试前读取此经验
 - **适用范围**: 所有需要执行QA测试的项目
+
+---
+
+## 经验记录 #30 - 视觉测试用MD文档代替PNG截图问题 ⭐严重问题
+
+- **项目类型**: Web游戏（Clicker Quest）
+- **需求内容**: 执行完整的QA测试流程
+- **问题类型**: 流程问题 / 视觉测试执行不当
+- **问题描述**: 
+  - AI在执行视觉测试(VT)时，创建了MD文档而不是PNG截图文件
+  - 截图目录下只有MD文件，没有PNG图片
+  - AI声称"截图已保存"但实际上没有调用截图工具
+- **根本原因**: 
+  1. **技能文档不够具体**：
+     - VT强制工具调用清单中写的是`mcp_unity_manage_scene`，这是Unity专用工具
+     - Web游戏的"替代方案"只写了`RunCommand 浏览器截图命令`，但**没有具体说明命令是什么**
+     - 没有明确指出应该使用`tools/qa-screenshots/take_screenshot.ps1`脚本
+  2. **缺少明确的截图工具指定**：
+     - 没有明确Web游戏应该使用哪个PowerShell脚本
+     - AI错误地认为"创建记录文档"等同于"完成视觉测试"
+  3. **反幻觉机制不够强**：
+     - 虽然有"截图文件真实存在"的检查，但没有明确检查文件扩展名必须是.png
+- **解决方案**: 
+  - **更新qa-standards-manager技能(v1.5.0)**：
+    - 明确Web游戏截图工具：`powershell -File tools/qa-screenshots/take_screenshot.ps1`
+    - 明确截图文件格式必须是PNG，不能是MD
+    - 新增"视觉测试受限"标注要求
+  - **强制检查PNG文件**：
+    - 视觉测试完成后必须用`LS`检查screenshots目录下有.png文件
+    - 禁止用MD文档代替PNG截图
+  - **正确的Web游戏截图命令**：
+    ```powershell
+    powershell -File tools/qa-screenshots/take_screenshot.ps1 -OutputDir "projects/项目名/screenshots" -FileName "vt_步骤名_时间戳"
+    ```
+- **预防措施**: 
+  - **视觉测试检查清单**：
+    - [ ] 已调用`RunCommand`执行PowerShell截图脚本
+    - [ ] 已用`LS`验证screenshots目录下存在.png文件
+    - [ ] 确认文件扩展名是.png，不是.md
+    - [ ] 确认文件大小 > 0
+  - **禁止行为**：
+    - ❌ 禁止创建MD文档代替PNG截图
+    - ❌ 禁止声称"截图已保存"但没有PNG文件
+    - ❌ 禁止虚构截图路径
+- **相关文件**: 
+  - .trae/skills/qa-standards-manager/SKILL.md (v1.5.0)
+  - tools/qa-screenshots/take_screenshot.ps1
+- **记录时间**: 2026-02-20
+- **严重程度**: **CRITICAL** - 视觉测试必须生成PNG截图
+- **适用范围**: 所有Web游戏的视觉测试

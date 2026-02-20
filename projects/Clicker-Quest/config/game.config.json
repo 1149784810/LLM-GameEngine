@@ -1,0 +1,376 @@
+{
+    "gameParams": {
+        "click": {
+            "baseOutput": 1,
+            "comboWindow": 500,
+            "comboMaxMultiplier": 2.0,
+            "comboIncrement": 0.1
+        },
+        "critical": {
+            "small": { "probability": 10, "multiplier": 2 },
+            "medium": { "probability": 5, "multiplier": 5 },
+            "mega": { "probability": 1, "multiplier": 10 }
+        },
+        "gps": {
+            "produceInterval": 1000,
+            "minGPS": 0
+        },
+        "offline": {
+            "efficiency": 0.5,
+            "maxHours": 24,
+            "minSeconds": 60
+        },
+        "display": {
+            "maxGold": 1e308,
+            "formatThresholds": {
+                "K": 1000,
+                "M": 1000000,
+                "B": 1000000000,
+                "T": 1000000000000
+            }
+        },
+        "save": {
+            "autoSaveInterval": 30000,
+            "storageKey": "clicker_quest_save"
+        }
+    },
+    "upgrades": {
+        "click_power": {
+            "id": "click_power",
+            "name": "点击强化",
+            "description": "每次点击额外获得 +1 金币",
+            "type": "permanent",
+            "category": "click",
+            "basePrice": 10,
+            "growthRate": 1.15,
+            "maxLevel": null,
+            "effect": { "type": "click_add", "value": 1 },
+            "icon": "👆"
+        },
+        "auto_clicker": {
+            "id": "auto_clicker",
+            "name": "自动点击器",
+            "description": "每秒自动获得 +1 金币",
+            "type": "permanent",
+            "category": "auto",
+            "basePrice": 100,
+            "growthRate": 1.15,
+            "maxLevel": null,
+            "effect": { "type": "gps_add", "value": 1 },
+            "icon": "🤖"
+        },
+        "double_click": {
+            "id": "double_click",
+            "name": "双击",
+            "description": "点击产出翻倍",
+            "type": "permanent",
+            "category": "click",
+            "basePrice": 500,
+            "growthRate": 1.5,
+            "maxLevel": 1,
+            "effect": { "type": "click_multiplier", "value": 2 },
+            "icon": "✌️"
+        },
+        "lucky_finger": {
+            "id": "lucky_finger",
+            "name": "幸运手指",
+            "description": "暴击率 +5%",
+            "type": "permanent",
+            "category": "click",
+            "basePrice": 1000,
+            "growthRate": 1.3,
+            "maxLevel": null,
+            "effect": { "type": "crit_rate_add", "value": 0.05 },
+            "icon": "🍀"
+        },
+        "golden_touch": {
+            "id": "golden_touch",
+            "name": "黄金之手",
+            "description": "所有金币产出 +10%",
+            "type": "permanent",
+            "category": "click",
+            "basePrice": 5000,
+            "growthRate": 1.4,
+            "maxLevel": null,
+            "effect": { "type": "gold_multiplier", "value": 0.10 },
+            "icon": "✨"
+        },
+        "time_warp": {
+            "id": "time_warp",
+            "name": "时间扭曲",
+            "description": "离线收益效率 +10%",
+            "type": "permanent",
+            "category": "auto",
+            "basePrice": 10000,
+            "growthRate": 1.5,
+            "maxLevel": null,
+            "effect": { "type": "offline_bonus", "value": 0.10 },
+            "icon": "⏰"
+        },
+        "mega_clicker": {
+            "id": "mega_clicker",
+            "name": "超级点击器",
+            "description": "每秒自动获得 +10 金币",
+            "type": "permanent",
+            "category": "auto",
+            "basePrice": 50000,
+            "growthRate": 1.2,
+            "maxLevel": null,
+            "effect": { "type": "gps_add", "value": 10 },
+            "icon": "🚀"
+        },
+        "critical_master": {
+            "id": "critical_master",
+            "name": "暴击大师",
+            "description": "暴击伤害 +50%",
+            "type": "permanent",
+            "category": "click",
+            "basePrice": 100000,
+            "growthRate": 1.3,
+            "maxLevel": null,
+            "effect": { "type": "crit_damage_add", "value": 0.50 },
+            "icon": "💥"
+        }
+    },
+    "items": {
+        "gold_boost_2x": {
+            "id": "gold_boost_2x",
+            "name": "金币翻倍",
+            "description": "所有金币产出翻倍，持续30秒",
+            "type": "buff",
+            "price": 5000,
+            "effect": { "type": "gold_multiplier", "value": 2.0 },
+            "duration": 30,
+            "source": "shop",
+            "maxStack": 99,
+            "icon": "💰"
+        },
+        "instant_gold": {
+            "id": "instant_gold",
+            "name": "即时金币",
+            "description": "立即获得当前金币10%",
+            "type": "instant",
+            "price": 10000,
+            "effect": { "type": "instant_percent", "value": 0.10 },
+            "source": "shop",
+            "maxStack": 99,
+            "icon": "💎"
+        },
+        "auto_boost": {
+            "id": "auto_boost",
+            "name": "自动加速",
+            "description": "GPS产出翻3倍，持续60秒",
+            "type": "buff",
+            "price": 20000,
+            "effect": { "type": "gps_multiplier", "value": 3.0 },
+            "duration": 60,
+            "source": "shop",
+            "maxStack": 99,
+            "icon": "⚡"
+        },
+        "gold_boost_5x": {
+            "id": "gold_boost_5x",
+            "name": "金币五倍",
+            "description": "所有金币产出翻5倍，持续15秒",
+            "type": "buff",
+            "effect": { "type": "gold_multiplier", "value": 5.0 },
+            "duration": 15,
+            "source": "achievement",
+            "maxStack": 99,
+            "icon": "🌟"
+        },
+        "lucky_hour": {
+            "id": "lucky_hour",
+            "name": "幸运时刻",
+            "description": "暴击率 +20%，持续60秒",
+            "type": "buff",
+            "effect": { "type": "crit_rate_add", "value": 0.20 },
+            "duration": 60,
+            "source": "achievement",
+            "maxStack": 99,
+            "icon": "🍀"
+        }
+    },
+    "achievements": {
+        "click_1": {
+            "id": "click_1",
+            "name": "初次点击",
+            "description": "完成你的第一次点击",
+            "category": "click",
+            "condition": { "clicks": 1 },
+            "reward": { "gold": 10 },
+            "icon": "🎯",
+            "hidden": false
+        },
+        "click_2": {
+            "id": "click_2",
+            "name": "点击新手",
+            "description": "累计点击100次",
+            "category": "click",
+            "condition": { "clicks": 100 },
+            "reward": { "gold": 100 },
+            "icon": "👆",
+            "hidden": false
+        },
+        "click_3": {
+            "id": "click_3",
+            "name": "点击达人",
+            "description": "累计点击1,000次",
+            "category": "click",
+            "condition": { "clicks": 1000 },
+            "reward": { "gold": 500 },
+            "icon": "✌️",
+            "hidden": false
+        },
+        "click_4": {
+            "id": "click_4",
+            "name": "点击大师",
+            "description": "累计点击10,000次",
+            "category": "click",
+            "condition": { "clicks": 10000 },
+            "reward": { "gold": 5000 },
+            "icon": "🏆",
+            "hidden": false
+        },
+        "click_5": {
+            "id": "click_5",
+            "name": "点击传奇",
+            "description": "累计点击100,000次",
+            "category": "click",
+            "condition": { "clicks": 100000 },
+            "reward": { "gold": 50000 },
+            "icon": "⭐",
+            "hidden": false
+        },
+        "click_6": {
+            "id": "click_6",
+            "name": "点击之神",
+            "description": "累计点击1,000,000次",
+            "category": "click",
+            "condition": { "clicks": 1000000 },
+            "reward": { "gold": 500000 },
+            "icon": "👑",
+            "hidden": false
+        },
+        "gold_1": {
+            "id": "gold_1",
+            "name": "小富翁",
+            "description": "累计获得1,000金币",
+            "category": "gold",
+            "condition": { "totalGold": 1000 },
+            "reward": { "item": "gold_boost_2x" },
+            "icon": "💰",
+            "hidden": false
+        },
+        "gold_2": {
+            "id": "gold_2",
+            "name": "中富翁",
+            "description": "累计获得10,000金币",
+            "category": "gold",
+            "condition": { "totalGold": 10000 },
+            "reward": { "item": "auto_boost" },
+            "icon": "💎",
+            "hidden": false
+        },
+        "gold_3": {
+            "id": "gold_3",
+            "name": "大富翁",
+            "description": "累计获得100,000金币",
+            "category": "gold",
+            "condition": { "totalGold": 100000 },
+            "reward": { "item": "gold_boost_5x" },
+            "icon": "🌟",
+            "hidden": false
+        },
+        "gold_4": {
+            "id": "gold_4",
+            "name": "超级富翁",
+            "description": "累计获得1,000,000金币",
+            "category": "gold",
+            "condition": { "totalGold": 1000000 },
+            "reward": { "item": "lucky_hour" },
+            "icon": "🌈",
+            "hidden": false
+        },
+        "upgrade_1": {
+            "id": "upgrade_1",
+            "name": "升级新手",
+            "description": "累计购买5次升级",
+            "category": "upgrade",
+            "condition": { "upgrades": 5 },
+            "reward": { "gold": 200 },
+            "icon": "📈",
+            "hidden": false
+        },
+        "upgrade_2": {
+            "id": "upgrade_2",
+            "name": "升级达人",
+            "description": "累计购买25次升级",
+            "category": "upgrade",
+            "condition": { "upgrades": 25 },
+            "reward": { "gold": 1000 },
+            "icon": "📊",
+            "hidden": false
+        },
+        "upgrade_3": {
+            "id": "upgrade_3",
+            "name": "升级大师",
+            "description": "累计购买100次升级",
+            "category": "upgrade",
+            "condition": { "upgrades": 100 },
+            "reward": { "gold": 10000 },
+            "icon": "🎯",
+            "hidden": false
+        },
+        "crit_1": {
+            "id": "crit_1",
+            "name": "暴击新手",
+            "description": "累计触发10次暴击",
+            "category": "crit",
+            "condition": { "crits": 10 },
+            "reward": { "gold": 100 },
+            "icon": "💥",
+            "hidden": false
+        },
+        "crit_2": {
+            "id": "crit_2",
+            "name": "暴击达人",
+            "description": "累计触发100次暴击",
+            "category": "crit",
+            "condition": { "crits": 100 },
+            "reward": { "item": "lucky_hour" },
+            "icon": "🔥",
+            "hidden": false
+        },
+        "crit_3": {
+            "id": "crit_3",
+            "name": "暴击大师",
+            "description": "累计触发1,000次暴击",
+            "category": "crit",
+            "condition": { "crits": 1000 },
+            "reward": { "item": "gold_boost_5x" },
+            "icon": "⚡",
+            "hidden": false
+        },
+        "offline_1": {
+            "id": "offline_1",
+            "name": "离线新手",
+            "description": "首次获得离线收益",
+            "category": "offline",
+            "condition": { "offlineEarned": true },
+            "reward": { "gold": 100 },
+            "icon": "🌙",
+            "hidden": false
+        },
+        "offline_2": {
+            "id": "offline_2",
+            "name": "离线达人",
+            "description": "累计获得10,000离线金币",
+            "category": "offline",
+            "condition": { "offlineGold": 10000 },
+            "reward": { "gold": 1000 },
+            "icon": "💤",
+            "hidden": false
+        }
+    }
+}

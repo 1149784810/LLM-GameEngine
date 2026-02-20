@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Clicker Quest - 点击冒险游戏">
+    <meta name="theme-color" content="#1A1A2E">
+    <title>Clicker Quest - 点击冒险</title>
+    
+    <!-- 样式文件 -->
+    <link rel="stylesheet" href="./src/styles/main.css">
+    <link rel="stylesheet" href="./src/styles/components.css">
+    <link rel="stylesheet" href="./src/styles/animations.css">
+    
+    <!-- PWA 支持 -->
+    <link rel="manifest" href="./manifest.json">
+    <link rel="apple-touch-icon" href="./assets/images/icons/icon-192.png">
+</head>
+<body>
+    <!-- 游戏容器 -->
+    <div id="game-container">
+        <!-- 主界面 -->
+        <div id="main-screen" class="screen active">
+            <!-- 状态栏区域 -->
+            <header class="status-bar">
+                <div class="gold-display">
+                    <span class="gold-icon">💰</span>
+                    <span id="gold-amount" class="gold-amount">0</span>
+                </div>
+                <div class="gps-display">
+                    <span class="gps-icon">📊</span>
+                    <span id="gps-amount">0</span>/s
+                </div>
+                <button id="settings-btn" class="icon-btn" aria-label="设置">
+                    ⚙️
+                </button>
+            </header>
+
+            <!-- 统计区域 -->
+            <div class="stats-bar">
+                <div class="stat-item">
+                    <span class="stat-label">连击</span>
+                    <span id="combo-multiplier" class="stat-value">x1.0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">最高连击</span>
+                    <span id="max-combo" class="stat-value">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">暴击率</span>
+                    <span id="crit-rate" class="stat-value">16%</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">今日</span>
+                    <span id="today-gold" class="stat-value">0</span>
+                </div>
+            </div>
+
+            <!-- 点击按钮区域 -->
+            <div class="click-area">
+                <button id="main-click-btn" class="click-button" aria-label="点击获取金币">
+                    <span class="click-text">点击我!</span>
+                    <span class="click-icon">👆</span>
+                </button>
+                <!-- 金币飘字容器 -->
+                <div id="floating-text-container" class="floating-text-container"></div>
+            </div>
+
+            <!-- BUFF状态栏 -->
+            <div id="buff-bar" class="buff-bar">
+                <!-- 动态生成的BUFF卡片 -->
+            </div>
+
+            <!-- 底部导航栏 -->
+            <nav class="bottom-nav">
+                <button class="nav-btn active" data-screen="main" aria-label="主页">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-label">主页</span>
+                </button>
+                <button class="nav-btn" data-screen="shop" aria-label="商店">
+                    <span class="nav-icon">🏪</span>
+                    <span class="nav-label">商店</span>
+                </button>
+                <button class="nav-btn" data-screen="items" aria-label="道具">
+                    <span class="nav-icon">🎒</span>
+                    <span class="nav-label">道具</span>
+                </button>
+                <button class="nav-btn" data-screen="achievements" aria-label="成就">
+                    <span class="nav-icon">🏆</span>
+                    <span class="nav-label">成就</span>
+                </button>
+            </nav>
+        </div>
+
+        <!-- 商店界面 -->
+        <div id="shop-screen" class="screen">
+            <header class="screen-header">
+                <button class="back-btn" data-screen="main" aria-label="返回">←</button>
+                <h1 class="screen-title">🏪 商店</h1>
+            </header>
+            <div class="shop-gold-display">
+                <span class="gold-icon">💰</span>
+                <span id="shop-gold-amount">0</span>
+            </div>
+            <div class="category-tabs" id="shop-categories">
+                <button class="category-tab active" data-category="all">全部商品</button>
+                <button class="category-tab" data-category="click">点击强化</button>
+                <button class="category-tab" data-category="auto">自动产出</button>
+            </div>
+            <div class="shop-list" id="shop-list">
+                <!-- 动态生成的商品卡片 -->
+            </div>
+        </div>
+
+        <!-- 道具界面 -->
+        <div id="items-screen" class="screen">
+            <header class="screen-header">
+                <button class="back-btn" data-screen="main" aria-label="返回">←</button>
+                <h1 class="screen-title">🎒 道具</h1>
+            </header>
+            <div class="items-grid" id="items-grid">
+                <!-- 动态生成的道具卡片 -->
+            </div>
+        </div>
+
+        <!-- 成就界面 -->
+        <div id="achievements-screen" class="screen">
+            <header class="screen-header">
+                <button class="back-btn" data-screen="main" aria-label="返回">←</button>
+                <h1 class="screen-title">🏆 成就</h1>
+            </header>
+            <div class="achievement-progress">
+                <div class="progress-item">
+                    <span class="progress-label">已解锁</span>
+                    <span id="unlocked-count" class="progress-value">0/0</span>
+                </div>
+                <div class="progress-item">
+                    <span class="progress-label">已领取</span>
+                    <span id="claimed-count" class="progress-value">0/0</span>
+                </div>
+            </div>
+            <div class="category-tabs" id="achievement-categories">
+                <button class="category-tab active" data-category="all">全部</button>
+                <button class="category-tab" data-category="click">点击</button>
+                <button class="category-tab" data-category="gold">金币</button>
+                <button class="category-tab" data-category="upgrade">升级</button>
+                <button class="category-tab" data-category="crit">暴击</button>
+            </div>
+            <div class="achievement-list" id="achievement-list">
+                <!-- 动态生成的成就卡片 -->
+            </div>
+        </div>
+
+        <!-- 设置界面 -->
+        <div id="settings-screen" class="screen">
+            <header class="screen-header">
+                <button class="back-btn" data-screen="main" aria-label="返回">←</button>
+                <h1 class="screen-title">⚙️ 设置</h1>
+            </header>
+            <div class="settings-list">
+                <div class="setting-item">
+                    <span class="setting-label">音效</span>
+                    <button id="sound-toggle" class="toggle-btn active">ON</button>
+                </div>
+                <div class="setting-item">
+                    <span class="setting-label">音乐</span>
+                    <button id="music-toggle" class="toggle-btn active">ON</button>
+                </div>
+                <div class="setting-item">
+                    <span class="setting-label">自动存档</span>
+                    <button id="autosave-toggle" class="toggle-btn active">ON</button>
+                </div>
+                <div class="setting-item">
+                    <span class="setting-label">导出存档</span>
+                    <button id="export-save-btn" class="action-btn">导出</button>
+                </div>
+                <div class="setting-item">
+                    <span class="setting-label">导入存档</span>
+                    <button id="import-save-btn" class="action-btn">导入</button>
+                </div>
+                <div class="setting-item danger">
+                    <span class="setting-label">重置游戏</span>
+                    <button id="reset-game-btn" class="action-btn danger">重置</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 弹窗容器 -->
+    <div id="modal-container">
+        <!-- 离线收益弹窗 -->
+        <div id="offline-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2 class="modal-title">欢迎回来!</h2>
+                <p class="modal-text">你离线了: <span id="offline-time">0</span></p>
+                <div class="modal-reward">
+                    <span class="reward-icon">💰</span>
+                    <span id="offline-gold" class="reward-amount">0</span>
+                </div>
+                <button id="claim-offline-btn" class="modal-btn primary">领取奖励</button>
+            </div>
+        </div>
+
+        <!-- 成就解锁弹窗 -->
+        <div id="achievement-modal" class="modal hidden">
+            <div class="modal-content">
+                <div id="achievement-icon" class="achievement-icon">🎯</div>
+                <h2 id="achievement-name" class="modal-title">成就解锁!</h2>
+                <p id="achievement-desc" class="modal-text"></p>
+                <p class="modal-reward-text">奖励: <span id="achievement-reward"></span></p>
+            </div>
+        </div>
+
+        <!-- 道具详情弹窗 -->
+        <div id="item-detail-modal" class="modal hidden">
+            <div class="modal-content">
+                <div id="item-icon" class="item-icon">💰</div>
+                <h2 id="item-name" class="modal-title">道具名称</h2>
+                <p id="item-desc" class="modal-text">道具描述</p>
+                <p id="item-effect" class="modal-effect">效果详情</p>
+                <div class="modal-buttons">
+                    <button id="use-item-btn" class="modal-btn primary">使用</button>
+                    <button id="cancel-item-btn" class="modal-btn secondary">取消</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 确认弹窗 -->
+        <div id="confirm-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2 id="confirm-title" class="modal-title">确认</h2>
+                <p id="confirm-text" class="modal-text">确定要执行此操作吗?</p>
+                <div class="modal-buttons">
+                    <button id="confirm-cancel-btn" class="modal-btn secondary">取消</button>
+                    <button id="confirm-ok-btn" class="modal-btn danger">确认</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast通知 -->
+        <div id="toast-container" class="toast-container"></div>
+    </div>
+
+    <!-- 游戏核心脚本 -->
+    <script src="./src/utils/numberFormatter.js"></script>
+    <script src="./src/utils/eventEmitter.js"></script>
+    <script src="./src/utils/storage.js"></script>
+    
+    <script src="./src/core/GameState.js"></script>
+    <script src="./src/core/ClickSystem.js"></script>
+    <script src="./src/core/ComboSystem.js"></script>
+    <script src="./src/core/CriticalSystem.js"></script>
+    
+    <script src="./src/systems/GPSManager.js"></script>
+    <script src="./src/systems/ShopManager.js"></script>
+    <script src="./src/systems/ItemManager.js"></script>
+    <script src="./src/systems/BuffManager.js"></script>
+    <script src="./src/systems/AchievementManager.js"></script>
+    <script src="./src/systems/LeaderboardManager.js"></script>
+    <script src="./src/systems/OfflineManager.js"></script>
+    <script src="./src/systems/SaveManager.js"></script>
+    
+    <script src="./src/ui/UIManager.js"></script>
+    <script src="./src/ui/AnimationManager.js"></script>
+    <script src="./src/ui/ToastManager.js"></script>
+    
+    <script src="./src/Game.js"></script>
+    
+    <!-- 游戏初始化 -->
+    <script>
+        // 游戏实例将在 Game.js 中创建
+        document.addEventListener('DOMContentLoaded', () => {
+            window.game = new Game();
+        });
+    </script>
+</body>
+</html>
