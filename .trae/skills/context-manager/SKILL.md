@@ -76,6 +76,36 @@ quality:
 tracking:
   execution_status:
     current: "PENDING"
+
+functions:
+  main:
+    name: "manage_context"
+    signature: "manage_context(operation: STRING, context_data: CONTEXT_DATA) -> CONTEXT_RESULT"
+    description: "管理项目上下文文件，支持创建、读取、更新、验证操作"
+  validators:
+    - name: "validate_context_format"
+      signature: "validate_context_format(context_file: FILE_PATH) -> VALIDATION_RESULT"
+      description: "验证上下文文件格式是否正确"
+    - name: "validate_required_fields"
+      signature: "validate_required_fields(context_data: CONTEXT_DATA) -> FIELD_VALIDATION_RESULT"
+      description: "验证必填字段是否完整"
+  state_managers:
+    - name: "create_context_checkpoint"
+      signature: "create_context_checkpoint(context_id: STRING) -> CHECKPOINT_ID"
+      description: "创建上下文检查点"
+    - name: "restore_context_from_checkpoint"
+      signature: "restore_context_from_checkpoint(checkpoint_id: STRING) -> CONTEXT_DATA"
+      description: "从检查点恢复上下文"
+  queries:
+    - name: "get_current_context"
+      signature: "get_current_context(project_id: STRING) -> CONTEXT_DATA"
+      description: "获取当前项目的最新上下文"
+    - name: "get_context_history"
+      signature: "get_context_history(project_id: STRING, limit: NUMBER) -> [CONTEXT_DATA]"
+      description: "获取上下文历史记录"
+    - name: "get_context_by_phase"
+      signature: "get_context_by_phase(project_id: STRING, phase_id: STRING) -> CONTEXT_DATA"
+      description: "获取指定阶段的上下文"
 ---
 
 # 上下文缓冲区管理器 (Context Manager)

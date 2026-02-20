@@ -129,47 +129,145 @@ execution:
 quality:
   acceptance_criteria:
     - id: "AC-001"
-      description: "所有功能路径已验证"
-      metric: "fpt_pass_rate"
+      description: "P0级验收项必须通过"
+      metric: "p0_items_pass_rate"
       threshold: 1.0
       operator: "=="
       required: true
     - id: "AC-002"
+      description: "无P0级Bug遗留"
+      metric: "p0_bug_count"
+      threshold: 0
+      operator: "=="
+      required: true
+    - id: "AC-003"
+      description: "功能测试(FT)完成"
+      metric: "ft_completion_rate"
+      threshold: 1.0
+      operator: "=="
+      required: true
+    - id: "AC-004"
+      description: "视觉测试(VT)完成"
+      metric: "vt_completion_rate"
+      threshold: 1.0
+      operator: "=="
+      required: true
+    - id: "AC-005"
+      description: "完整路径测试(FPT)完成"
+      metric: "fpt_completion_rate"
+      threshold: 1.0
+      operator: "=="
+      required: true
+    - id: "AC-006"
+      description: "回归测试(RT)完成"
+      metric: "rt_completion_rate"
+      threshold: 1.0
+      operator: "=="
+      required: true
+    - id: "AC-007"
       description: "所有截图证据完整"
       metric: "screenshot_coverage"
       threshold: 1.0
       operator: ">="
       required: true
-    - id: "AC-003"
-      description: "无P0级Bug"
-      metric: "p0_bug_count"
-      threshold: 0
+    - id: "AC-008"
+      description: "测试证据完整（截图+日志+操作记录）"
+      metric: "evidence_completeness"
+      threshold: 1.0
       operator: "=="
       required: true
-    - id: "AC-004"
+    - id: "AC-009"
       description: "反幻觉自检已签署"
       metric: "anti_hallucination_signed"
       threshold: 1
       operator: "=="
       required: true
-    - id: "AC-005"
+    - id: "AC-010"
       description: "工具调用审计通过"
       metric: "tool_audit_passed"
       threshold: 1
       operator: "=="
       required: true
+  regression_requirements:
+    trigger: "Bug修复后必须执行"
+    coverage: "覆盖所有测试用例"
+    validation: "验证修复的问题已解决"
+    no_new_issues: "确认未引入新问题"
+    key_flow_pass: "关键流程必须通过"
+  experience_integration:
+    cache_query: "测试前查询experience-cache-manager获取历史风险点"
+    update_after_test: "测试后更新项目经验库"
+    bug_experience_record: "记录Bug修复经验到项目经验库"
+    reference_skill: "experience-cache-manager"
 
 testing:
   required_tests:
-    - "FT-功能测试"
-    - "VT-视觉测试（强制截图）"
-    - "FPT-完整路径测试"
-    - "RT-回归测试"
+    - id: "FT"
+      name: "功能测试"
+      priority: "P0"
+      skippable: false
+      description: "验证所有功能点是否正常工作，不可跳过"
+    - id: "VT"
+      name: "视觉测试"
+      priority: "P0"
+      skippable: false
+      description: "验证UI显示正确性，必须截图验证，不可跳过"
+    - id: "FPT"
+      name: "完整路径测试"
+      priority: "P0"
+      skippable: false
+      description: "验证所有用户路径可正常走完，不可跳过"
+    - id: "RT"
+      name: "回归测试"
+      priority: "P0"
+      skippable: false
+      description: "Bug修复后必须执行，验证修复有效且未引入新问题，不可跳过"
+    - id: "PT"
+      name: "性能测试"
+      priority: "P1"
+      skippable: true
+      description: "验证性能指标，可选执行"
   evidence_required: true
   evidence_types:
-    - "screenshot"
-    - "log"
-    - "operation_record"
+    - type: "screenshot"
+      required: true
+      description: "截图证据，每项测试至少1张截图"
+    - type: "log"
+      required: true
+      description: "日志证据，控制台输出记录"
+    - type: "operation_record"
+      required: true
+      description: "操作记录，实际执行步骤可追溯"
+    - type: "timestamp"
+      required: true
+      description: "时间戳证据，精确到分钟"
+  anti_hallucination:
+    core_principles:
+      - principle: "EVIDENCE_FIRST"
+        description: "无证据 = 未测试"
+        enforcement: "严格"
+      - principle: "PESSIMISTIC_ASSUMPTION"
+        description: "代码存在 ≠ 功能正常"
+        enforcement: "严格"
+      - principle: "PASS_RATE_CHECK"
+        description: "100%通过 = 测试无效（需检查测试是否流于形式）"
+        enforcement: "警告"
+      - principle: "EVIDENCE_AUTHENTICITY"
+        description: "截图必须包含时间戳，禁止复用旧截图"
+        enforcement: "严格"
+    prohibited_behaviors:
+      - behavior: "禁止程序员自测"
+        description: "程序员不得测试自己编写的代码"
+        severity: "CRITICAL"
+      - behavior: "禁止虚构测试结果"
+        description: "禁止编造测试数据或结果"
+        severity: "CRITICAL"
+      - behavior: "禁止跳过阻塞步骤"
+        description: "必须等待验证完成才能继续"
+        severity: "CRITICAL"
+      - behavior: "禁止仅凭代码推断"
+        description: "必须通过实际运行验证"
+        severity: "CRITICAL"
 
 tracking:
   execution_status:
@@ -192,6 +290,45 @@ tracking:
       name: "ANTI_HALLUCINATION_FAILED"
       severity: "CRITICAL"
       description: "反幻觉自检未通过"
+
+functions:
+  main:
+    name: "execute_qa_standards"
+    signature: "execute_qa_standards(test_scope: TEST_SCOPE, config: QA_CONFIG) -> QA_RESULT"
+    description: "执行QA测试标准流程，包含FT/VT/FPT/RT测试"
+  validators:
+    - name: "validate_ft_completion"
+      signature: "validate_ft_completion(test_results: [TEST_RESULT]) -> FT_VALIDATION_RESULT"
+      description: "验证功能测试是否完成"
+    - name: "validate_vt_completion"
+      signature: "validate_vt_completion(screenshots: [SCREENSHOT]) -> VT_VALIDATION_RESULT"
+      description: "验证视觉测试是否完成"
+    - name: "validate_fpt_completion"
+      signature: "validate_fpt_completion(path_coverage: PATH_COVERAGE) -> FPT_VALIDATION_RESULT"
+      description: "验证完整路径测试是否完成"
+    - name: "validate_rt_completion"
+      signature: "validate_rt_completion(regression_results: [TEST_RESULT]) -> RT_VALIDATION_RESULT"
+      description: "验证回归测试是否完成"
+    - name: "validate_acceptance_criteria"
+      signature: "validate_acceptance_criteria(metrics: QA_METRICS, criteria: [CRITERION]) -> AC_VALIDATION_RESULT"
+      description: "验证验收标准是否满足"
+  state_managers:
+    - name: "create_qa_checkpoint"
+      signature: "create_qa_checkpoint(qa_session_id: STRING) -> CHECKPOINT_ID"
+      description: "创建QA测试检查点"
+    - name: "restore_qa_state"
+      signature: "restore_qa_state(checkpoint_id: STRING) -> QA_STATE"
+      description: "恢复QA测试状态"
+  queries:
+    - name: "get_test_coverage"
+      signature: "get_test_coverage(qa_session_id: STRING) -> COVERAGE_REPORT"
+      description: "获取测试覆盖率报告"
+    - name: "get_bug_summary"
+      signature: "get_bug_summary(qa_session_id: STRING) -> BUG_SUMMARY"
+      description: "获取Bug汇总信息"
+    - name: "get_evidence_status"
+      signature: "get_evidence_status(qa_session_id: STRING) -> EVIDENCE_STATUS"
+      description: "获取证据状态"
 ---
 
 # 验收标准管理器 v2.3.0

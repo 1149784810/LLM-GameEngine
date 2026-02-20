@@ -138,6 +138,39 @@ tracking:
       name: "ANTI_HALLUCINATION_VIOLATION"
       severity: "CRITICAL"
       description: "违反反幻觉原则"
+
+functions:
+  main:
+    name: "monitor_qa_execution"
+    signature: "monitor_qa_execution(test_plan: TEST_PLAN, config: MONITOR_CONFIG) -> AUDIT_RESULT"
+    description: "监控QA测试执行过程，验证工具调用和截图证据"
+  validators:
+    - name: "validate_tool_calls"
+      signature: "validate_tool_calls(tool_calls: [TOOL_CALL], required_tools: [STRING]) -> TOOL_VALIDATION_RESULT"
+      description: "验证必需工具是否被调用"
+    - name: "validate_screenshot_evidence"
+      signature: "validate_screenshot_evidence(screenshot_paths: [FILE_PATH]) -> SCREENSHOT_VALIDATION_RESULT"
+      description: "验证截图证据是否完整"
+    - name: "validate_anti_hallucination"
+      signature: "validate_anti_hallucination(claims: [CLAIM], evidence: [EVIDENCE]) -> AH_VALIDATION_RESULT"
+      description: "验证反幻觉原则是否被遵守"
+  state_managers:
+    - name: "create_execution_checkpoint"
+      signature: "create_execution_checkpoint(execution_id: STRING) -> CHECKPOINT_ID"
+      description: "创建执行检查点"
+    - name: "restore_execution_state"
+      signature: "restore_execution_state(checkpoint_id: STRING) -> EXECUTION_STATE"
+      description: "恢复执行状态"
+  queries:
+    - name: "get_tool_call_history"
+      signature: "get_tool_call_history(execution_id: STRING) -> [TOOL_CALL]"
+      description: "获取工具调用历史"
+    - name: "get_violation_report"
+      signature: "get_violation_report(execution_id: STRING) -> VIOLATION_REPORT"
+      description: "获取违规报告"
+    - name: "get_audit_summary"
+      signature: "get_audit_summary(execution_id: STRING) -> AUDIT_SUMMARY"
+      description: "获取审计摘要"
 ---
 
 # QA执行监督器 v1.0.0
