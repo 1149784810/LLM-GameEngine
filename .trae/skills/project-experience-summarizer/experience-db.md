@@ -1028,3 +1028,333 @@
 ### 流程执行与经验管理
 - 经验记录 #16: 项目经验总结技能调用缺失
 - 经验记录 #22: QA测试未进行实际运行验证（Clicker Quest）
+
+---
+
+## 经验记录 #23 - 数值计算重复应用加成问题（Clicker Quest）
+
+- **项目类型**: Web游戏（HTML5 + JavaScript）
+- **需求内容**: GPS（每秒金币产出）计算
+- **问题类型**: 技术问题 / 数值计算逻辑缺陷
+- **问题描述**: 
+  - 黄金之手升级的加成效果被重复应用
+  - `calculateGPS()` 方法中应用了一次加成
+  - `calculateGPSGold()` 方法中又应用了一次加成
+  - 导致玩家获得的GPS收益异常偏高
+- **根本原因**: 
+  - **职责划分不清**: 两个方法都负责计算，没有明确哪个是"基础值"，哪个是"最终值"
+  - **缺少数值计算规范**: 没有统一的加成应用顺序和位置
+  - **代码审查不严格**: 没有发现重复计算的问题
+- **解决方案**: 
+  - 明确职责：`calculateGPS()` 计算基础GPS值，`calculateGPSGold()` 应用所有加成
+  - 在 `calculateGPS()` 中移除黄金之手加成
+  - 只在 `calculateGPSGold()` 中统一应用所有加成
+- **预防措施**: 
+  - **数值计算规范**:
+    - 基础值计算和加成应用分离
+    - 加成只在最终计算方法中应用一次
+    - 添加注释说明加成应用位置
+  - **代码审查检查清单**:
+    - [ ] 加成是否只应用一次
+    - [ ] 基础值和最终值的计算是否分离
+    - [ ] 是否有重复计算的代码路径
+  - **单元测试**: 为数值计算添加单元测试，验证加成只应用一次
+- **相关文件**: 
+  - projects/Clicker Quest/src/systems/GPSManager.js
+- **记录时间**: 2026-02-20
+- **适用范围**: 所有需要数值计算和加成系统的游戏项目
+
+---
+
+## 经验记录 #24 - 概率分配逻辑问题（Clicker Quest）
+
+- **项目类型**: Web游戏（HTML5 + JavaScript）
+- **需求内容**: 暴击系统概率分配
+- **问题类型**: 技术问题 / 概率计算逻辑缺陷
+- **问题描述**: 
+  - 额外暴击率（幸运手指+BUFF）只加到了小暴击的阈值上
+  - 大暴击和中暴击的概率不会随额外暴击率增加
+  - 玩家购买幸运手指后，大暴击概率没有提升
+- **根本原因**: 
+  - **概率分配设计缺陷**: 没有考虑额外概率如何分配到各类型
+  - **阈值计算逻辑简单**: 直接加到小暴击阈值，没有按比例分配
+  - **缺少概率验证**: 没有验证总概率是否正确
+- **解决方案**: 
+  - 按比例分配额外暴击率到各类型暴击
+  - 计算各类型暴击的基础比例，按比例分配额外概率
+  ```javascript
+  const baseTotal = mega.probability + medium.probability + small.probability;
+  const megaRatio = mega.probability / baseTotal;
+  const mediumRatio = medium.probability / baseTotal;
+  const smallRatio = small.probability / baseTotal;
+  
+  const megaThreshold = mega.probability + bonus * megaRatio;
+  const mediumThreshold = megaThreshold + medium.probability + bonus * mediumRatio;
+  const smallThreshold = mediumThreshold + small.probability + bonus * smallRatio;
+  ```
+- **预防措施**: 
+  - **概率系统设计规范**:
+    - 额外概率需要明确分配规则
+    - 按比例分配或按优先级分配
+    - 添加概率验证和日志
+  - **代码审查检查清单**:
+    - [ ] 额外概率是否正确分配
+    - [ ] 总概率是否正确（不超过100%）
+    - [ ] 各类型概率变化是否符合预期
+  - **可视化调试**: 添加概率分布的可视化显示
+- **相关文件**: 
+  - projects/Clicker Quest/src/core/CriticalSystem.js
+- **记录时间**: 2026-02-20
+- **适用范围**: 所有需要概率分配系统的游戏项目（抽卡、掉落、暴击等）
+
+---
+
+## 经验记录 #25 - 条件检测不完整问题（Clicker Quest）
+
+- **项目类型**: Web游戏（HTML5 + JavaScript）
+- **需求内容**: 成就系统条件检测
+- **问题类型**: 技术问题 / 条件判断逻辑不完整
+- **问题描述**: 
+  - `getCurrentValue()` 方法缺少部分条件类型的处理
+  - 缺失的条件类型包括：maxCombo、megaCriticals、mediumCriticals、smallCriticals、totalGoldSpent、currentGold、gps、playTime
+  - 导致相关成就无法正确检测进度
+- **根本原因**: 
+  - **条件类型枚举不完整**: 设计时没有列出所有可能的条件类型
+  - **增量开发遗漏**: 后续添加新条件类型时忘记更新检测方法
+  - **缺少条件类型检查**: 没有验证配置的条件类型是否都有对应的检测逻辑
+- **解决方案**: 
+  - 补充缺失的条件类型处理
+  - 添加默认处理和警告日志
+  ```javascript
+  getCurrentValue(achievementId) {
+    const condition = achievement.condition;
+    
+    // 已知条件类型
+    if (condition.totalClicks !== undefined) return this.gameState.playerData.totalClicks || 0;
+    if (condition.maxCombo !== undefined) return this.gameState.playerData.maxCombo || 0;
+    // ... 其他条件
+    
+    // 未知条件类型警告
+    console.warn(`Unknown condition type for achievement: ${achievementId}`);
+    return 0;
+  }
+  ```
+- **预防措施**: 
+  - **条件类型集中定义**: 使用常量或枚举定义所有条件类型
+  - **配置验证**: 启动时验证所有成就配置的条件类型都有对应的检测逻辑
+  - **代码审查检查清单**:
+    - [ ] 所有条件类型都有对应的检测逻辑
+    - [ ] 新增条件类型时是否更新了检测方法
+    - [ ] 是否有默认处理和警告
+  - **自动化测试**: 为每种条件类型添加测试用例
+- **相关文件**: 
+  - projects/Clicker Quest/src/systems/AchievementManager.js
+- **记录时间**: 2026-02-20
+- **适用范围**: 所有需要条件检测系统的项目（成就、任务、触发器等）
+
+---
+
+## 经验记录 #26 - DOM元素ID引用不一致问题（Clicker Quest）
+
+- **项目类型**: Web游戏（HTML5 + JavaScript）
+- **需求内容**: UI元素缓存和事件绑定
+- **问题类型**: 技术问题 / HTML与JavaScript不一致
+- **问题描述**: 
+  - JavaScript中引用的元素ID与HTML中实际的ID不一致
+  - `shopCategoryTabs` 引用 `shop-category-tabs`，但HTML中是 `shop-categories`
+  - `itemsGoldAmount` 引用的元素在HTML中根本不存在
+- **根本原因**: 
+  - **命名不一致**: HTML和JavaScript使用不同的命名规范
+  - **缺少同步检查**: 修改HTML时没有同步更新JavaScript
+  - **缺少元素存在性检查**: 没有验证缓存的元素是否存在
+- **解决方案**: 
+  - 统一元素ID命名规范
+  - 移除不存在的元素引用
+  - 添加元素存在性检查
+  ```javascript
+  cacheElements() {
+    this.elements = {
+      shopCategoryTabs: document.getElementById('shop-categories'), // 修正ID
+      // itemsGoldAmount: document.getElementById('items-gold-amount'), // 移除不存在的
+    };
+    
+    // 验证元素存在
+    Object.entries(this.elements).forEach(([key, element]) => {
+      if (!element) {
+        console.warn(`Element not found: ${key}`);
+      }
+    });
+  }
+  ```
+- **预防措施**: 
+  - **命名规范统一**: HTML和JavaScript使用相同的ID命名
+  - **元素存在性检查**: 缓存元素时验证是否存在
+  - **代码审查检查清单**:
+    - [ ] JavaScript中的元素ID与HTML一致
+    - [ ] 所有缓存的元素都存在
+    - [ ] 是否有元素存在性检查
+  - **自动化测试**: 启动时检查所有必需元素是否存在
+- **相关文件**: 
+  - projects/Clicker Quest/src/ui/UIManager.js
+  - projects/Clicker Quest/index.html
+- **记录时间**: 2026-02-20
+- **关联经验**: 经验记录 #19（点击事件目标元素判断错误）
+- **适用范围**: 所有需要DOM操作的Web项目
+
+---
+
+## 经验记录 #27 - 系统连接确认缺失问题（Clicker Quest）
+
+- **项目类型**: Web游戏（HTML5 + JavaScript）
+- **需求内容**: 多系统协作和依赖注入
+- **问题类型**: 技术问题 / 系统连接不完整
+- **问题描述**: 
+  - GPSManager构造函数已传入buffManager
+  - 但connectSystems中没有显式确认连接
+  - 导致BUFF对GPS产出的影响不稳定
+- **根本原因**: 
+  - **依赖注入不完整**: 构造函数传入但未显式设置引用
+  - **连接确认缺失**: 没有验证系统间的连接是否成功
+  - **初始化顺序问题**: 系统可能在连接完成前被调用
+- **解决方案**: 
+  - 在connectSystems中显式设置所有系统引用
+  - 添加连接验证日志
+  ```javascript
+  connectSystems() {
+    if (this.buffManager) {
+      this.clickSystem.setBuffManager(this.buffManager);
+      this.criticalSystem.setBuffManager(this.buffManager);
+      this.gpsManager.setBuffManager(this.buffManager); // 确保连接
+      console.log('All systems connected to BuffManager');
+    }
+  }
+  ```
+- **预防措施**: 
+  - **系统连接规范**:
+    - 在connectSystems中显式设置所有依赖
+    - 添加连接验证日志
+    - 在系统初始化时检查依赖是否存在
+  - **代码审查检查清单**:
+    - [ ] 所有系统依赖都已显式连接
+    - [ ] 是否有连接验证
+    - [ ] 系统初始化顺序是否正确
+  - **依赖图**: 绘制系统依赖图，确保所有连接都已建立
+- **相关文件**: 
+  - projects/Clicker Quest/src/Game.js
+- **记录时间**: 2026-02-20
+- **适用范围**: 所有需要多系统协作的项目
+
+---
+
+## 经验记录 #28 - 视觉测试(VT)阻塞式流程实践（Clicker Quest）
+
+- **项目类型**: Web游戏（HTML5 + JavaScript）
+- **需求内容**: 视觉测试流程优化
+- **问题类型**: 流程改进 / 最佳实践
+- **成功实践描述**: 
+  - 引入视觉测试(VT)阻塞式流程
+  - 每一步测试必须完成后才能进行下一步
+  - 截图保存到screenshots/目录
+  - 修复后强制回归测试
+- **关键成功因素**: 
+  - **阻塞式执行**: 每个步骤都有明确的阻塞点
+  - **截图先行**: 操作前先截图，便于对比分析
+  - **分析阻塞**: 分析未完成不能进行下一步
+  - **回归测试**: 修复后必须回归测试该步骤
+- **流程步骤**: 
+  1. **Step 1: 启动验证**
+     - 尝试打开游戏
+     - 若失败，检查Web服务器
+     - 截图验证，阻塞等待分析完成
+     - 确认游戏确实打开后才能继续
+  2. **Step 2: 规划测试流程**
+     - 读取UI布局文档和功能路径图
+     - 识别所有按钮和入口
+     - 生成阻塞式测试计划
+  3. **Step 3: 执行阻塞式测试**
+     - 截图当前界面
+     - 分析截图识别元素位置
+     - 执行操作
+     - 截图操作后界面
+     - 阻塞式分析结果
+     - 若无变化，排查修复后回归测试
+- **效果评估**: 
+  - Bug发现率提升: 发现了之前遗漏的多个问题
+  - 测试完整性: 确保每个功能点都被实际验证
+  - 证据留存: 所有截图保存，便于后续追溯
+- **可复用的流程模板**: 
+  ```markdown
+  ## 阻塞式测试流程
+  ### Step 1: 启动验证
+  - [ ] 1.1 尝试打开游戏
+  - [ ] 1.2 Web服务器检查（如需要）
+  - [ ] 1.3 截图保存: screenshots/vt_startup_*.png
+  - [ ] 1.4 **【阻塞】确认游戏确实打开**
+  
+  ### Step 2: 规划测试流程
+  - [ ] 2.1 读取UI布局文档和功能路径图
+  - [ ] 2.2 识别所有按钮和入口
+  - [ ] 2.3 **【阻塞】生成测试计划**
+  
+  ### Step 3: 执行阻塞式测试
+  - [ ] 3.1 截图操作前界面
+  - [ ] 3.2 **【阻塞】分析截图识别元素位置**
+  - [ ] 3.3 执行操作
+  - [ ] 3.4 截图操作后界面
+  - [ ] 3.5 **【阻塞】分析结果，确认界面变化**
+  - [ ] 3.6 若无变化 → 排查修复 → 回归测试
+  ```
+- **相关文件**: 
+  - .trae/skills/qa-standards-manager/SKILL.md
+  - .trae/skills/qa-standards-manager/templates/vt-template.md
+- **记录时间**: 2026-02-20
+- **适用范围**: 所有需要进行视觉测试的游戏项目
+
+---
+
+## 按项目类型分类（更新）
+
+### Web游戏（HTML5 + JavaScript）
+- 经验记录 #3: ES Module 导致的功能失效
+- 经验记录 #4: DOM事件绑定失效（UI类设计缺陷）
+- 经验记录 #6: ES Module CORS 问题（二次元连连看）
+- 经验记录 #9: JavaScript常量定义顺序问题
+- 经验记录 #10: 类未暴露到全局命名空间
+- 经验记录 #15: ES Module CORS问题重复犯错
+- 经验记录 #17: 多文件JavaScript项目脚本加载顺序问题
+- 经验记录 #18: 事件数据结构不一致导致UI不更新
+- 经验记录 #19: 点击事件目标元素判断错误
+- 经验记录 #20: 方法名不一致导致运行时错误
+- 经验记录 #21: 空值检查不完善导致运行时错误
+- 经验记录 #23: 数值计算重复应用加成问题
+- 经验记录 #24: 概率分配逻辑问题
+- 经验记录 #25: 条件检测不完整问题
+- 经验记录 #26: DOM元素ID引用不一致问题
+- 经验记录 #27: 系统连接确认缺失问题
+
+### 增量/点击游戏
+- 经验记录 #8: 经验库前置查询成功实践
+- 经验记录 #23: 数值计算重复应用加成问题
+- 经验记录 #24: 概率分配逻辑问题
+
+---
+
+## 按问题类型分类（更新）
+
+### 数值计算问题
+- 经验记录 #23: 数值计算重复应用加成问题
+
+### 概率系统问题
+- 经验记录 #24: 概率分配逻辑问题
+
+### 条件检测问题
+- 经验记录 #25: 条件检测不完整问题
+
+### DOM操作问题
+- 经验记录 #26: DOM元素ID引用不一致问题
+
+### 系统架构问题
+- 经验记录 #27: 系统连接确认缺失问题
+
+### 测试流程最佳实践
+- 经验记录 #28: 视觉测试(VT)阻塞式流程实践
