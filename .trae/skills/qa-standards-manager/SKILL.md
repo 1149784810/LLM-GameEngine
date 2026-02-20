@@ -1,6 +1,6 @@
 ---
 name: "qa-standards-manager"
-version: "2.1.1"
+version: "2.2.0"
 description: "验收标准管理器，负责制定和管理游戏开发各阶段的验收标准。测试标准的唯一权威来源。核心原则：视觉测试(VT)与功能路径测试(FPT)合并执行，采用阻塞式流程，每一步必须截图验证后才能继续。Web游戏必须用浏览器全屏打开，全屏截图。"
 author: "Jianle He"
 created_at: "2024-02-19"
@@ -116,6 +116,67 @@ quality:
 
 ---
 
+## 窗口置顶切换机制（新增）
+
+为了确保用户能始终看到整个测试流程的运作细节，QA测试流程中引入了**窗口置顶切换机制**：
+
+### 核心原则
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  窗口置顶切换原则                                                │
+│                                                                  │
+│  1. 截图前：将游戏浏览器窗口置顶，让用户看到截图目标              │
+│  2. 分析时：将IDE/智能体工作窗口置顶，让用户看到分析过程          │
+│  3. 循环切换：每个测试步骤都在游戏和IDE之间切换置顶               │
+│  4. 透明可见：确保用户始终能看到当前正在进行的操作                │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 窗口管理脚本
+
+**脚本位置**：`tools/qa-screenshots/window-manager.ps1`
+
+**功能说明**：
+| 操作 | 命令 | 用途 |
+|------|------|------|
+| 列出窗口 | `window-manager.ps1 -Action list-windows` | 查看所有可见窗口 |
+| 查找窗口 | `window-manager.ps1 -Action find-window -WindowTitle "标题"` | 定位特定窗口 |
+| 带到前台 | `window-manager.ps1 -Action bring-to-front -WindowTitle "标题"` | 激活窗口 |
+| 设置置顶 | `window-manager.ps1 -Action set-topmost -WindowTitle "标题"` | 窗口始终置顶 |
+| 取消置顶 | `window-manager.ps1 -Action remove-topmost -WindowTitle "标题"` | 取消置顶状态 |
+
+### 窗口切换流程
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  测试步骤中的窗口切换流程                                        │
+│                                                                  │
+│  Step X.1: 准备截图                                              │
+│  ├── 将游戏浏览器窗口置顶                                        │
+│  ├── 等待用户确认游戏界面可见                                    │
+│  └── 执行全屏截图                                                │
+│                                                                  │
+│  Step X.2: 分析截图                                              │
+│  ├── 将IDE/智能体工作窗口置顶                                    │
+│  ├── 分析截图内容                                                │
+│  └── 确定下一步操作                                              │
+│                                                                  │
+│  Step X.3: 执行操作                                              │
+│  ├── 将游戏浏览器窗口置顶                                        │
+│  ├── 执行点击/输入操作                                           │
+│  └── 等待界面响应                                                │
+│                                                                  │
+│  Step X.4: 验证结果                                              │
+│  ├── 将游戏浏览器窗口置顶                                        │
+│  ├── 执行全屏截图                                                │
+│  ├── 将IDE/智能体工作窗口置顶                                    │
+│  └── 对比分析截图变化                                            │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## Step 1: 环境准备（强制执行）
 
 ### 1.1 启动Web服务器
@@ -142,6 +203,21 @@ start "http://localhost:8080/projects/项目名/index.html"
 - **必须**用本地浏览器打开
 - **必须**全屏模式（F11或最大化）
 - **禁止**使用OpenPreview预览（预览窗口太小）
+
+### 1.2a 将游戏窗口置顶（新增）
+
+**强制工具调用**：
+```powershell
+# 等待浏览器窗口加载（Chrome/Edge）
+Start-Sleep -Seconds 2
+
+# 将浏览器窗口置顶
+powershell -File tools/qa-screenshots/window-manager.ps1 -Action bring-to-front -ProcessName "chrome" -TimeoutSeconds 5
+# 或针对Edge
+powershell -File tools/qa-screenshots/window-manager.ps1 -Action bring-to-front -ProcessName "msedge" -TimeoutSeconds 5
+```
+
+**目的**：确保游戏窗口在前台可见，用户可以清楚看到游戏界面
 
 ### 1.3 全屏截图保存
 
@@ -318,6 +394,18 @@ Read "projects/项目名/docs/03-整合文档/LD-UI-LAYOUT-*.md"
 
 ### 详细执行步骤
 
+#### 3.x.0 切换窗口置顶 - 游戏窗口（新增）
+
+**强制工具调用**：
+```powershell
+# 将游戏浏览器窗口置顶，准备截图
+powershell -File tools/qa-screenshots/window-manager.ps1 -Action bring-to-front -ProcessName "chrome" -TimeoutSeconds 5
+# 或
+powershell -File tools/qa-screenshots/window-manager.ps1 -Action bring-to-front -ProcessName "msedge" -TimeoutSeconds 5
+```
+
+**目的**：确保游戏窗口在前台，用户可以看到即将截图的内容
+
 #### 3.x.1 全屏截图当前界面
 
 **强制工具调用**：
@@ -330,7 +418,17 @@ powershell -File tools/qa-screenshots/take_screenshot.ps1 -OutputDir "projects/�
 - PNG格式
 - 保存到 `screenshots/` 目录
 
-#### 3.x.2 【阻塞】分析截图，确定按钮位置
+#### 3.x.2 切换窗口置顶 - IDE窗口（新增）
+
+**强制工具调用**：
+```powershell
+# 将IDE/Trae窗口置顶，准备分析截图
+powershell -File tools/qa-screenshots/window-manager.ps1 -Action bring-to-front -WindowTitle "Trae" -TimeoutSeconds 5
+```
+
+**目的**：将工作界面带到前台，用户可以清楚看到分析过程
+
+#### 3.x.3 【阻塞】分析截图，确定按钮位置
 
 **阻塞条件**：
 - 必须明确指出按钮在截图中的位置
@@ -348,20 +446,42 @@ powershell -File tools/qa-screenshots/take_screenshot.ps1 -OutputDir "projects/�
 
 **只有分析完成并确认按钮位置后，才能继续**
 
-#### 3.x.3 执行点击操作
+#### 3.x.4 切换窗口置顶 - 游戏窗口（新增）
+
+**强制工具调用**：
+```powershell
+# 将游戏浏览器窗口置顶，准备执行点击操作
+powershell -File tools/qa-screenshots/window-manager.ps1 -Action bring-to-front -ProcessName "chrome" -TimeoutSeconds 5
+```
+
+**目的**：确保游戏窗口在前台，用户可以清楚看到点击操作
+
+#### 3.x.5 执行点击操作
 
 **操作方式**：
 - 在浏览器中实际点击按钮
 - 或使用自动化工具模拟点击
 
-#### 3.x.4 全屏截图操作后界面
+**⚠️ 注意**：执行操作时游戏窗口必须在前台可见
+
+#### 3.x.6 全屏截图操作后界面
 
 **强制工具调用**：
 ```powershell
 powershell -File tools/qa-screenshots/take_screenshot.ps1 -OutputDir "projects/项目名/screenshots" -FileName "step3_x_after_按钮名_时间戳"
 ```
 
-#### 3.x.5 【阻塞】对比截图，确认界面变化
+#### 3.x.7 切换窗口置顶 - IDE窗口（新增）
+
+**强制工具调用**：
+```powershell
+# 将IDE/Trae窗口置顶，准备分析结果
+powershell -File tools/qa-screenshots/window-manager.ps1 -Action bring-to-front -WindowTitle "Trae" -TimeoutSeconds 5
+```
+
+**目的**：将工作界面带到前台，用户可以清楚看到对比分析过程
+
+#### 3.x.8 【阻塞】对比截图，确认界面变化
 
 **阻塞条件**：
 - 必须对比操作前后两张截图
@@ -522,3 +642,4 @@ Read ".trae/skills/project-experience-summarizer/experience-db.md"
 | v2.0 | 2026-02-20 | **重大重构**：1. 将VT和FPT合并为阻塞式流程；2. 强制使用浏览器全屏打开；3. 强制全屏截图；4. 每一步必须截图验证后才能继续；5. 删除产生歧义的部分 |
 | v2.1 | 2026-02-21 | **截图脚本修复**：1. 使用GetDeviceCaps API获取物理屏幕分辨率；2. 忽略Windows DPI缩放设置；3. 确保截图捕获完整全屏（2560x1600等物理分辨率） |
 | v2.1.1 | 2026-02-21 | **截图脚本增强**：1. 每次截图动态读取当前机器分辨率；2. 支持多屏幕环境；3. 添加容错处理（检测失败时自动回退到虚拟分辨率） |
+| v2.2.0 | 2026-02-21 | **窗口置顶切换机制**：1. 新增window-manager.ps1脚本；2. 在截图和分析之间自动切换窗口置顶；3. 确保用户始终能看到流程运作细节；4. 支持Chrome/Edge浏览器和IDE窗口切换 |
