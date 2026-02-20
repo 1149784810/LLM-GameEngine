@@ -34,10 +34,3 @@ out/
 .env
 .env.local
 .env.*.local
-
-# 测试截图和证据文件
-tests/evidence/screenshots/
-tests/evidence/logs/
-tests/evidence/videos/
-**/screenshots/
-**/test-evidence/

@@ -1,0 +1,41 @@
+{
+  "state": {
+    "projectId": "test-game",
+    "currentPhase": "Phase-1",
+    "currentStage": "Stage-1-1",
+    "currentStep": null,
+    "checkpoints": [
+      {
+        "id": "checkpoint-1771596063973",
+        "timestamp": 1771596063973,
+        "state": {
+          "projectId": "test-game",
+          "currentPhase": "INIT",
+          "currentStage": "INIT",
+          "currentStep": null,
+          "checkpoints": [],
+          "startedAt": 1771596020200,
+          "lastUpdated": 1771596020200
+        },
+        "context": {
+          "projectId": "test-game",
+          "executionHistory": [],
+          "artifacts": [],
+          "preconditions": {},
+          "createdAt": 1771596020205,
+          "lastUpdated": 1771596020205
+        }
+      }
+    ],
+    "startedAt": 1771596020200,
+    "lastUpdated": 1771596064041
+  },
+  "context": {
+    "projectId": "test-game",
+    "executionHistory": [],
+    "artifacts": [],
+    "preconditions": {},
+    "createdAt": 1771596020205,
+    "lastUpdated": 1771596020205
+  }
+}

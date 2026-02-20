@@ -1,0 +1,89 @@
+{
+  "projectId": "test-project",
+  "currentPhase": "Phase-1",
+  "currentStage": "Stage-1-1",
+  "currentStep": null,
+  "checkpoints": [
+    {
+      "id": "checkpoint-1771595423391",
+      "timestamp": 1771595423392,
+      "state": {
+        "projectId": "test-project",
+        "currentPhase": "INIT",
+        "currentStage": "INIT",
+        "currentStep": null,
+        "checkpoints": [],
+        "startedAt": 1771595227842,
+        "lastUpdated": 1771595227858
+      },
+      "context": {
+        "projectId": "test-project",
+        "executionHistory": [],
+        "artifacts": [],
+        "preconditions": {},
+        "createdAt": 1771595227846,
+        "lastUpdated": 1771595227859
+      }
+    },
+    {
+      "id": "checkpoint-1771595629952",
+      "timestamp": 1771595629952,
+      "state": {
+        "projectId": "test-project",
+        "currentPhase": "INIT",
+        "currentStage": "INIT",
+        "currentStep": null,
+        "checkpoints": [
+          {
+            "id": "checkpoint-1771595423391",
+            "timestamp": 1771595423392,
+            "state": {
+              "projectId": "test-project",
+              "currentPhase": "INIT",
+              "currentStage": "INIT",
+              "currentStep": null,
+              "checkpoints": [],
+              "startedAt": 1771595227842,
+              "lastUpdated": 1771595227858
+            },
+            "context": {
+              "projectId": "test-project",
+              "executionHistory": [],
+              "artifacts": [],
+              "preconditions": {},
+              "createdAt": 1771595227846,
+              "lastUpdated": 1771595227859
+            }
+          }
+        ],
+        "startedAt": 1771595227842,
+        "lastUpdated": 1771595423392
+      },
+      "context": {
+        "projectId": "test-project",
+        "executionHistory": [
+          {
+            "toolName": "Write",
+            "params": "{file:test.md}",
+            "result": "{success:true}",
+            "timestamp": 1771595434441,
+            "hash": "6c8e477f9f080e0b"
+          }
+        ],
+        "artifacts": [],
+        "preconditions": {
+          "Stage-1-1": {
+            "definedBy": "Stage-0-0",
+            "definedAt": 1771595446674,
+            "mandatory": true,
+            "constraints": "[{id:TEST-001,type:TOOL_CALLED,params:{toolName:Write,minCount:1}}]"
+          }
+        },
+        "createdAt": 1771595227846,
+        "lastUpdated": 1771595446674
+      }
+    }
+  ],
+  "startedAt": 1771595227842,
+  "lastUpdated": 1771595629992
+}

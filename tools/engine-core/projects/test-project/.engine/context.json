@@ -1,0 +1,52 @@
+{
+  "projectId": "test-project",
+  "executionHistory": [
+    {
+      "toolName": "Write",
+      "params": "{file:test.md}",
+      "result": "{success:true}",
+      "timestamp": 1771595434441,
+      "hash": "6c8e477f9f080e0b"
+    },
+    {
+      "toolName": "Write",
+      "params": {
+        "file": "test.md",
+        "content": "hello"
+      },
+      "result": {
+        "success": true
+      },
+      "timestamp": 1771595629957,
+      "hash": "22e92d7989957265"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "E:\\LLMGameEngine\\tools\\engine-core\\projects\\test-project\\test-artifact.txt",
+      "createdBy": "Stage-0-0",
+      "createdAt": 1771595629980,
+      "checksum": "6ae8a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72",
+      "validated": true
+    }
+  ],
+  "preconditions": {
+    "Stage-1-1": {
+      "definedBy": "Stage-0-0",
+      "definedAt": 1771595629963,
+      "mandatory": true,
+      "constraints": [
+        {
+          "id": "TEST-001",
+          "type": "TOOL_CALLED",
+          "params": {
+            "toolName": "Write",
+            "minCount": 1
+          }
+        }
+      ]
+    }
+  },
+  "createdAt": 1771595227846,
+  "lastUpdated": 1771595629986
+}
